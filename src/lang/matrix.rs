@@ -19,11 +19,8 @@ pub fn chars(code: &str) -> Vec<Vec<char>> {
 pub fn neighboring(code: &str, loc: [usize; 2]) -> HashMap<char, char> {
     let mut neighbors: HashMap<char, char> = HashMap::new();
     let matrix: Vec<Vec<char>> = chars(code);
-    let directions: HashMap<char, [isize; 2]> =
-        [('N', [-1, 0]), ('S', [1, 0]), ('W', [0, -1]), ('E', [0, 1])]
-            .iter()
-            .cloned()
-            .collect();
+    let directions: [(char, [isize; 2]); 4] =
+        [('N', [-1, 0]), ('S', [1, 0]), ('W', [0, -1]), ('E', [0, 1])];
 
     for (key, value) in &directions {
         let row = &matrix.get((loc[0] as isize + value[0]) as usize);
