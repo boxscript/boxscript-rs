@@ -17,5 +17,5 @@ git clone https://github.com/boxscript/boxscript-rs.git
 ## Requirements
 
 - [Rust Nightly](https://rustup.rs/)
-- [LLVM](http://llvm.org/)]
+- [LLVM 12](http://llvm.org/)
   - We have… plans.
