@@ -16,7 +16,7 @@ pub fn chars(code: &str) -> Vec<Vec<char>> {
     }
 }
 
-pub fn neighboring(code: &str, loc: [usize; 2]) -> HashMap<char, char> {
+pub fn neighboring(code: &str, loc: &[usize; 2]) -> HashMap<char, char> {
     let mut neighbors: HashMap<char, char> = HashMap::new();
     let matrix: Vec<Vec<char>> = chars(code);
     let directions: [(char, [isize; 2]); 4] =
@@ -53,28 +53,28 @@ mod tests {
     fn test_neighboring() {
         use super::neighboring;
         assert_eq!(
-            neighboring(&"ab\ncd", [0, 0]),
+            neighboring(&"ab\ncd", &[0, 0]),
             [('N', '\0'), ('S', 'c'), ('W', '\0'), ('E', 'b')]
                 .iter()
                 .cloned()
                 .collect::<super::HashMap<char, char>>()
         );
         assert_eq!(
-            neighboring(&"", [0, 0]),
+            neighboring(&"", &[0, 0]),
             [('N', '\0'), ('S', '\0'), ('W', '\0'), ('E', '\0')]
                 .iter()
                 .cloned()
                 .collect::<super::HashMap<char, char>>()
         );
         assert_eq!(
-            neighboring(&"abc\ndef\nghi", [1, 1]),
+            neighboring(&"abc\ndef\nghi", &[1, 1]),
             [('N', 'b'), ('S', 'h'), ('W', 'd'), ('E', 'f')]
                 .iter()
                 .cloned()
                 .collect::<super::HashMap<char, char>>()
         );
         assert_eq!(
-            neighboring(&"abc\ndef\nghi", [100, 43000]),
+            neighboring(&"abc\ndef\nghi", &[100, 43000]),
             [('N', '\0'), ('S', '\0'), ('W', '\0'), ('E', '\0')]
                 .iter()
                 .cloned()
