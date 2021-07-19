@@ -19,7 +19,14 @@ fn main() {
         process::exit(0);
     }
 
-    let lines: Vec<Vec<char>> = code.lines().map(|line| format!("{1:\u{0}<0$}", length.unwrap(), line).chars().collect()).collect();
+    let lines: Vec<Vec<char>> = code
+        .lines()
+        .map(|line| {
+            format!("{1:\u{0}<0$}", length.unwrap(), line)
+                .chars()
+                .collect()
+        })
+        .collect();
 
     for line in lines {
         for chr in line {
