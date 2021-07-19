@@ -1,4 +1,8 @@
-on: [push, pull_request]
+
+on:
+  push:
+  pull_request:
+
 
 name: Rustup
 
@@ -62,6 +66,7 @@ jobs:
         with:
           command: clippy
           args: -- -D warnings
+
   artifact:
     name: Generate Artifact
     needs: [check,test,fmt,clippy]
