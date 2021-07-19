@@ -2,6 +2,10 @@ use std::env;
 use std::fs;
 use std::process;
 
+mod lang;
+
+use crate::lang::matrix::chars;
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() != 2 {
@@ -13,13 +17,7 @@ fn main() {
 
     let code: String = fs::read_to_string(filename).expect("Something went wrong reading the file");
 
-    let length: Option<usize> = code.lines().map(|line| line.chars().count()).max();
-
-    if length.is_none() {
-        process::exit(0);
-    }
-
-    let lines: Vec<Vec<char>> = code.lines().map(|line| format!("{1:\u{0}<0$}", length.unwrap(), line).chars().collect()).collect();
+    let lines: Vec<Vec<char>> = chars(&code);
 
     for line in lines {
         for chr in line {
