@@ -25,4 +25,10 @@ pub enum Token {
     LPAREN,
     RPAREN,
     OUTPUT,
+    NUM,
+}
+
+pub struct Atom {
+    pub token: Token,
+    pub value: Option<i128>,
 }
