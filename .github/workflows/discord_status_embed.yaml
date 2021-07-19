@@ -15,6 +15,7 @@ jobs:
     steps:
       # Process the artifact uploaded in the `pull_request`-triggered workflow:
       - name: Get Pull Request Information
+        continue-on-error: true
         id: pr_info
         if: github.event.workflow_run.event == 'pull_request'
         run: |
@@ -37,6 +38,7 @@ jobs:
       # to send an embed.
       - name: GitHub Actions Status Embed for Discord
         uses: SebastiaanZ/github-status-embed-for-discord@v0.3.0
+        continue-on-error: true
         with:
           # Webhook token
           webhook_id: ${{ secrets.discord_webhook_id }}
