@@ -333,6 +333,54 @@ mod tests {
                     value: None,
                 },
             ]
-        )
+        );
+
+        let mut molecule = Molecule::new(vec![
+            Atom {
+                token: Token::NUM,
+                value: Some(1),
+            },
+            Atom {
+                token: Token::POW,
+                value: None,
+            },
+            Atom {
+                token: Token::NUM,
+                value: Some(2),
+            },
+            Atom {
+                token: Token::POW,
+                value: None,
+            },
+            Atom {
+                token: Token::NUM,
+                value: Some(3),
+            },
+        ]);
+        assert_eq!(
+            molecule.sort().unwrap().iter().map(|atom| **atom).collect::<Vec<Atom>>(),
+            vec![
+                Atom {
+                    token: Token::NUM,
+                    value: Some(1),
+                },
+                Atom {
+                    token: Token::NUM,
+                    value: Some(2),
+                },
+                Atom {
+                    token: Token::NUM,
+                    value: Some(3),
+                },
+                Atom {
+                    token: Token::POW,
+                    value: None,
+                },
+                Atom {
+                    token: Token::POW,
+                    value: None,
+                },
+            ]
+        );
     }
 }
