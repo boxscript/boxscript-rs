@@ -57,7 +57,7 @@ pub struct Molecule<'a> {
 impl<'a> Molecule<'a> {
     pub fn new(children: Vec<Atom>) -> Molecule<'a> {
         Molecule {
-            children: children,
+            children,
             sorted_children: None,
         }
     }
@@ -74,6 +74,9 @@ impl<'a> Molecule<'a> {
             if child.token == Token::NUM {
                 output.push(child);
             } else if child.token == Token::POW {
+                while !stack.is_empty() && stack.last().cloned().unwrap().precedence() > child.precedence() {
+                    output.push(stack.pop().unwrap());
+                }
                 stack.push(child);
             } else if child.token == Token::LPAREN {
                 stack.push(child);
@@ -90,7 +93,7 @@ impl<'a> Molecule<'a> {
             } else {
                 for i in 1..11 {
                     if child.precedence() == i {
-                        while stack.len() > 0 && stack.last().cloned().unwrap().precedence() >= i {
+                        while !stack.is_empty() && stack.last().cloned().unwrap().precedence() >= i {
                             output.push(stack.pop().unwrap());
                         }
                         stack.push(child);
@@ -100,7 +103,7 @@ impl<'a> Molecule<'a> {
             }
         }
 
-        while stack.len() != 0 {
+        while !stack.is_empty() {
             output.push(stack.pop().unwrap());
         }
 
@@ -294,7 +297,12 @@ mod tests {
             },
         ]);
         assert_eq!(
-            molecule.sort().unwrap().iter().map(|atom| **atom).collect::<Vec<Atom>>(),
+            molecule
+                .sort()
+                .unwrap()
+                .iter()
+                .map(|atom| **atom)
+                .collect::<Vec<Atom>>(),
             vec![
                 Atom {
                     token: Token::NUM,
@@ -358,7 +366,12 @@ mod tests {
             },
         ]);
         assert_eq!(
-            molecule.sort().unwrap().iter().map(|atom| **atom).collect::<Vec<Atom>>(),
+            molecule
+                .sort()
+                .unwrap()
+                .iter()
+                .map(|atom| **atom)
+                .collect::<Vec<Atom>>(),
             vec![
                 Atom {
                     token: Token::NUM,
