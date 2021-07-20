@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Atom {
     Greater,
     Less,
@@ -164,28 +164,27 @@ mod tests {
             Err("Unmatched right parenthesis")
         );
 
-        let mut molecule = Molecule::new(vec![
-            Atom::LeftParen,
-            Atom::Data(3),
-            Atom::Sum,
-            Atom::Data(5),
-            Atom::RightParen,
-            Atom::Product,
-            Atom::LeftParen,
-            Atom::Data(2),
-            Atom::Difference,
-            Atom::Data(7),
-            Atom::Quotient,
-            Atom::Data(9),
-            Atom::RightParen,
-        ]);
         assert_eq!(
-            molecule
-                .sort()
-                .unwrap()
-                .iter()
-                .map(|atom| **atom)
-                .collect::<Vec<Atom>>(),
+            Molecule::new(vec![
+                Atom::LeftParen,
+                Atom::Data(3),
+                Atom::Sum,
+                Atom::Data(5),
+                Atom::RightParen,
+                Atom::Product,
+                Atom::LeftParen,
+                Atom::Data(2),
+                Atom::Difference,
+                Atom::Data(7),
+                Atom::Quotient,
+                Atom::Data(9),
+                Atom::RightParen,
+            ])
+            .sort()
+            .unwrap()
+            .iter()
+            .map(|atom| **atom)
+            .collect::<Vec<Atom>>(),
             vec![
                 Atom::Data(3),
                 Atom::Data(5),
@@ -199,20 +198,19 @@ mod tests {
             ]
         );
 
-        let mut molecule = Molecule::new(vec![
-            Atom::Data(1),
-            Atom::Power,
-            Atom::Data(2),
-            Atom::Power,
-            Atom::Data(3),
-        ]);
         assert_eq!(
-            molecule
-                .sort()
-                .unwrap()
-                .iter()
-                .map(|atom| **atom)
-                .collect::<Vec<Atom>>(),
+            Molecule::new(vec![
+                Atom::Data(1),
+                Atom::Power,
+                Atom::Data(2),
+                Atom::Power,
+                Atom::Data(3),
+            ])
+            .sort()
+            .unwrap()
+            .iter()
+            .map(|atom| **atom)
+            .collect::<Vec<Atom>>(),
             vec![
                 Atom::Data(1),
                 Atom::Data(2),
