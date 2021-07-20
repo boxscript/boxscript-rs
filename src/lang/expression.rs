@@ -1,5 +1,5 @@
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum Token {
+pub enum Atom {
     GT,
     LT,
     EQ,
@@ -20,29 +20,23 @@ pub enum Token {
     LPAREN,
     RPAREN,
     OUTPUT,
-    NUM,
+    NUM(i128),
     MEM,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct Atom {
-    pub token: Token,
-    pub value: Option<i128>,
 }
 
 impl Atom {
     pub fn precedence(&self) -> u8 {
-        match self.token {
-            Token::OUTPUT | Token::ASSIGN => 1,
-            Token::LT | Token::GT | Token::EQ | Token::NE => 2,
-            Token::OR => 3,
-            Token::XOR => 4,
-            Token::AND => 5,
-            Token::LSHIFT | Token::RSHIFT => 6,
-            Token::ADD | Token::SUB => 7,
-            Token::MUL | Token::DIV | Token::MOD => 8,
-            Token::MEM | Token::NOT => 9,
-            Token::POW => 10,
+        match self {
+            Atom::OUTPUT | Atom::ASSIGN => 1,
+            Atom::LT | Atom::GT | Atom::EQ | Atom::NE => 2,
+            Atom::OR => 3,
+            Atom::XOR => 4,
+            Atom::AND => 5,
+            Atom::LSHIFT | Atom::RSHIFT => 6,
+            Atom::ADD | Atom::SUB => 7,
+            Atom::MUL | Atom::DIV | Atom::MOD => 8,
+            Atom::MEM | Atom::NOT => 9,
+            Atom::POW => 10,
             _ => 0,
         }
     }
@@ -71,21 +65,23 @@ impl<'a> Molecule<'a> {
         let mut stack: Vec<&Atom> = Vec::new();
 
         for child in &self.children {
-            if child.token == Token::NUM {
+            if let Atom::NUM(_) = *child {
                 output.push(child);
-            } else if child.token == Token::POW {
-                while !stack.is_empty() && stack.last().cloned().unwrap().precedence() > child.precedence() {
+            } else if *child == Atom::POW {
+                while !stack.is_empty()
+                    && stack.last().cloned().unwrap().precedence() > child.precedence()
+                {
                     output.push(stack.pop().unwrap());
                 }
                 stack.push(child);
-            } else if child.token == Token::LPAREN {
+            } else if *child == Atom::LPAREN {
                 stack.push(child);
-            } else if child.token == Token::RPAREN {
-                if !stack.iter().any(|atom| atom.token == Token::LPAREN) {
+            } else if *child == Atom::RPAREN {
+                if !stack.iter().any(|atom| **atom == Atom::LPAREN) {
                     return Err("Unmatched right parenthesis");
                 }
 
-                while stack.last().cloned().unwrap().token != Token::LPAREN {
+                while *stack.last().cloned().unwrap() != Atom::LPAREN {
                     output.push(stack.pop().unwrap());
                 }
 
@@ -93,7 +89,8 @@ impl<'a> Molecule<'a> {
             } else {
                 for i in 1..11 {
                     if child.precedence() == i {
-                        while !stack.is_empty() && stack.last().cloned().unwrap().precedence() >= i {
+                        while !stack.is_empty() && stack.last().cloned().unwrap().precedence() >= i
+                        {
                             output.push(stack.pop().unwrap());
                         }
                         stack.push(child);
@@ -107,7 +104,7 @@ impl<'a> Molecule<'a> {
             output.push(stack.pop().unwrap());
         }
 
-        if output.iter().any(|atom| atom.token == Token::LPAREN) {
+        if output.iter().any(|atom| **atom == Atom::LPAREN) {
             return Err("Unmatched left parenthesis");
         }
 
@@ -121,70 +118,23 @@ impl<'a> Molecule<'a> {
 mod tests {
     #[test]
     fn test_atom_precedence() {
-        use super::{Atom, Token};
+        use super::Atom;
 
-        assert_eq!(
-            Atom {
-                token: Token::ASSIGN,
-                value: None,
-            }
-            .precedence(),
-            1
-        );
+        assert_eq!(Atom::ASSIGN.precedence(), 1);
 
-        assert_eq!(
-            Atom {
-                token: Token::LPAREN,
-                value: None,
-            }
-            .precedence(),
-            0
-        );
+        assert_eq!(Atom::LPAREN.precedence(), 0);
 
-        assert_eq!(
-            Atom {
-                token: Token::SUB,
-                value: None,
-            }
-            .precedence(),
-            7
-        );
+        assert_eq!(Atom::SUB.precedence(), 7);
     }
 
     #[test]
     fn test_molecule_new() {
-        use super::{Atom, Molecule, Token};
+        use super::{Atom, Molecule};
 
         assert_eq!(
-            Molecule::new(vec![
-                Atom {
-                    token: Token::NUM,
-                    value: Some(1),
-                },
-                Atom {
-                    token: Token::ADD,
-                    value: None,
-                },
-                Atom {
-                    token: Token::NUM,
-                    value: Some(1),
-                },
-            ]),
+            Molecule::new(vec![Atom::NUM(1), Atom::ADD, Atom::NUM(1),]),
             Molecule {
-                children: vec![
-                    Atom {
-                        token: Token::NUM,
-                        value: Some(1),
-                    },
-                    Atom {
-                        token: Token::ADD,
-                        value: None,
-                    },
-                    Atom {
-                        token: Token::NUM,
-                        value: Some(1),
-                    },
-                ],
+                children: vec![Atom::NUM(1), Atom::ADD, Atom::NUM(1),],
                 sorted_children: None,
             }
         );
@@ -192,109 +142,42 @@ mod tests {
 
     #[test]
     fn test_molecule_sort() {
-        use super::{Atom, Molecule, Token};
+        use super::{Atom, Molecule};
 
         assert_eq!(
-            Molecule::new(vec![Atom {
-                token: Token::LPAREN,
-                value: None,
-            }])
-            .sort(),
+            Molecule::new(vec![Atom::LPAREN]).sort(),
             Err("Unmatched left parenthesis")
         );
 
         assert_eq!(
             Molecule::new(vec![
-                Atom {
-                    token: Token::LPAREN,
-                    value: None,
-                },
-                Atom {
-                    token: Token::NUM,
-                    value: Some(3),
-                },
-                Atom {
-                    token: Token::ADD,
-                    value: None,
-                },
-                Atom {
-                    token: Token::NUM,
-                    value: Some(5),
-                },
-                Atom {
-                    token: Token::RPAREN,
-                    value: None,
-                },
-                Atom {
-                    token: Token::MUL,
-                    value: None,
-                },
-                Atom {
-                    token: Token::NUM,
-                    value: Some(2),
-                },
-                Atom {
-                    token: Token::RPAREN,
-                    value: None,
-                },
+                Atom::LPAREN,
+                Atom::NUM(3),
+                Atom::ADD,
+                Atom::NUM(5),
+                Atom::RPAREN,
+                Atom::MUL,
+                Atom::NUM(7),
+                Atom::RPAREN,
             ])
             .sort(),
             Err("Unmatched right parenthesis")
         );
 
         let mut molecule = Molecule::new(vec![
-            Atom {
-                token: Token::LPAREN,
-                value: None,
-            },
-            Atom {
-                token: Token::NUM,
-                value: Some(3),
-            },
-            Atom {
-                token: Token::ADD,
-                value: None,
-            },
-            Atom {
-                token: Token::NUM,
-                value: Some(5),
-            },
-            Atom {
-                token: Token::RPAREN,
-                value: None,
-            },
-            Atom {
-                token: Token::MUL,
-                value: None,
-            },
-            Atom {
-                token: Token::LPAREN,
-                value: None,
-            },
-            Atom {
-                token: Token::NUM,
-                value: Some(2),
-            },
-            Atom {
-                token: Token::SUB,
-                value: None,
-            },
-            Atom {
-                token: Token::NUM,
-                value: Some(7),
-            },
-            Atom {
-                token: Token::DIV,
-                value: None,
-            },
-            Atom {
-                token: Token::NUM,
-                value: Some(9),
-            },
-            Atom {
-                token: Token::RPAREN,
-                value: None,
-            },
+            Atom::LPAREN,
+            Atom::NUM(3),
+            Atom::ADD,
+            Atom::NUM(5),
+            Atom::RPAREN,
+            Atom::MUL,
+            Atom::LPAREN,
+            Atom::NUM(2),
+            Atom::SUB,
+            Atom::NUM(7),
+            Atom::DIV,
+            Atom::NUM(9),
+            Atom::RPAREN,
         ]);
         assert_eq!(
             molecule
@@ -304,66 +187,24 @@ mod tests {
                 .map(|atom| **atom)
                 .collect::<Vec<Atom>>(),
             vec![
-                Atom {
-                    token: Token::NUM,
-                    value: Some(3),
-                },
-                Atom {
-                    token: Token::NUM,
-                    value: Some(5),
-                },
-                Atom {
-                    token: Token::ADD,
-                    value: None,
-                },
-                Atom {
-                    token: Token::NUM,
-                    value: Some(2),
-                },
-                Atom {
-                    token: Token::NUM,
-                    value: Some(7),
-                },
-                Atom {
-                    token: Token::NUM,
-                    value: Some(9),
-                },
-                Atom {
-                    token: Token::DIV,
-                    value: None,
-                },
-                Atom {
-                    token: Token::SUB,
-                    value: None,
-                },
-                Atom {
-                    token: Token::MUL,
-                    value: None,
-                },
+                Atom::NUM(3),
+                Atom::NUM(5),
+                Atom::ADD,
+                Atom::NUM(2),
+                Atom::NUM(7),
+                Atom::NUM(9),
+                Atom::DIV,
+                Atom::SUB,
+                Atom::MUL,
             ]
         );
 
         let mut molecule = Molecule::new(vec![
-            Atom {
-                token: Token::NUM,
-                value: Some(1),
-            },
-            Atom {
-                token: Token::POW,
-                value: None,
-            },
-            Atom {
-                token: Token::NUM,
-                value: Some(2),
-            },
-            Atom {
-                token: Token::POW,
-                value: None,
-            },
-            Atom {
-                token: Token::NUM,
-                value: Some(3),
-            },
+            Atom::NUM(1),
+            Atom::POW,
+            Atom::NUM(2),
+            Atom::POW,
+            Atom::NUM(3),
         ]);
         assert_eq!(
             molecule
@@ -373,26 +214,11 @@ mod tests {
                 .map(|atom| **atom)
                 .collect::<Vec<Atom>>(),
             vec![
-                Atom {
-                    token: Token::NUM,
-                    value: Some(1),
-                },
-                Atom {
-                    token: Token::NUM,
-                    value: Some(2),
-                },
-                Atom {
-                    token: Token::NUM,
-                    value: Some(3),
-                },
-                Atom {
-                    token: Token::POW,
-                    value: None,
-                },
-                Atom {
-                    token: Token::POW,
-                    value: None,
-                },
+                Atom::NUM(1),
+                Atom::NUM(2),
+                Atom::NUM(3),
+                Atom::POW,
+                Atom::POW,
             ]
         );
     }
