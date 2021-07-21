@@ -20,14 +20,8 @@ git clone https://github.com/boxscript/boxscript-rs.git
 
 ## Usage
 
-1. Start Nix's shell
+1. Run the code with Nix
 
 ```sh
-nix-shell
-```
-
-2. Use cargo to run the project
-
-```sh
-cargo run [path/to/file.bs]
+nix-shell --run "cargo run [path/to/file.bs]"
 ```
