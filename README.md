@@ -6,6 +6,10 @@ What are boxes, exactly? Boxes, and their younger sibling, blocks, are simply un
 
 BoxScript's most defining feature is encouraging **thinking inside the box** when writing code—literally, since no code can exist outside of a box. If that's not BS, then what is?
 
+## Requirements
+
+- [Nix](https://nixos.org/download.html)
+
 ## Installation
 
 1. Clone the repository
@@ -14,8 +18,16 @@ BoxScript's most defining feature is encouraging **thinking inside the box** whe
 git clone https://github.com/boxscript/boxscript-rs.git
 ```
 
-## Requirements
+## Usage
 
-- [Rust Nightly](https://rustup.rs/)
-- [LLVM 12](https://releases.llvm.org/download.html)
-  - We have… plans.
+1. Start Nix's shell
+
+```sh
+nix-shell
+```
+
+2. Use cargo to run the project
+
+```sh
+cargo run [path/to/file.bs]
+```
