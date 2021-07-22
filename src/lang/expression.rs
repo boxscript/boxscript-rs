@@ -87,16 +87,13 @@ impl Molecule {
 
                 stack.pop();
             } else {
-                for i in 1..11 {
-                    if child.precedence() == i {
-                        while !stack.is_empty() && stack.last().cloned().unwrap().precedence() >= i
-                        {
-                            output.push(stack.pop().unwrap());
-                        }
-                        stack.push(*child);
-                        break;
-                    }
+                let precedence = child.precedence();
+
+                while !stack.is_empty() && stack.last().cloned().unwrap().precedence() >= precedence
+                {
+                    output.push(stack.pop().unwrap());
                 }
+                stack.push(*child);
             }
         }
 
@@ -216,8 +213,11 @@ mod tests {
 
         assert_eq!(
             Molecule::new(vec![
+                Atom::Data(0),
+                Atom::LeftShift,
+                Atom::Not,
                 Atom::Data(1),
-                Atom::Or,
+                Atom::Xor,
                 Atom::Data(2),
                 Atom::Or,
                 Atom::Data(3),
@@ -225,9 +225,12 @@ mod tests {
             .sort()
             .unwrap(),
             vec![
+                Atom::Data(0),
                 Atom::Data(1),
+                Atom::Not,
+                Atom::LeftShift,
                 Atom::Data(2),
-                Atom::Or,
+                Atom::Xor,
                 Atom::Data(3),
                 Atom::Or,
             ]
