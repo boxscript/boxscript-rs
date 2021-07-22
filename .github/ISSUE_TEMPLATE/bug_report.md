@@ -27,6 +27,6 @@ A clear and concise description of what actually happened. Paste outputs where a
 
 ## Platform
 
-- Rust version: [e.g. stable 1.53.0]
-- LLVM version: [e.g. 12.0.1]
-- OS: [e.g. NixOS 21.05 on AArch64]
+- Rust version: (e.g. 1.55.0)
+- LLVM version: (e.g. 12.0.1)
+- OS: (e.g. NixOS 21.05 on AArch64)
