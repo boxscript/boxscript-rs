@@ -42,46 +42,46 @@ impl Atom {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub struct Molecule<'a> {
+#[derive(Clone, Debug, PartialEq)]
+pub struct Molecule {
     children: Vec<Atom>,
-    sorted_children: Option<Vec<&'a Atom>>,
+    sorted_children: Option<Vec<Atom>>,
 }
 
-impl<'a> Molecule<'a> {
-    pub fn new(children: Vec<Atom>) -> Molecule<'a> {
+impl Molecule {
+    pub fn new(children: Vec<Atom>) -> Molecule {
         Molecule {
             children,
             sorted_children: None,
         }
     }
 
-    pub fn sort(&'a mut self) -> Result<Vec<&'a Atom>, &str> {
+    pub fn sort(&mut self) -> Result<Vec<Atom>, &str> {
         if self.sorted_children.is_some() {
             return Ok(self.sorted_children.as_ref().unwrap().to_vec());
         }
 
-        let mut output: Vec<&Atom> = Vec::new();
-        let mut stack: Vec<&Atom> = Vec::new();
+        let mut output: Vec<Atom> = Vec::new();
+        let mut stack: Vec<Atom> = Vec::new();
 
         for child in &self.children {
             if let Atom::Data(_) = *child {
-                output.push(child);
+                output.push(*child);
             } else if *child == Atom::Power {
                 while !stack.is_empty()
                     && stack.last().cloned().unwrap().precedence() > child.precedence()
                 {
                     output.push(stack.pop().unwrap());
                 }
-                stack.push(child);
+                stack.push(*child);
             } else if *child == Atom::LeftParen {
-                stack.push(child);
+                stack.push(*child);
             } else if *child == Atom::RightParen {
-                if !stack.iter().any(|atom| **atom == Atom::LeftParen) {
+                if !stack.iter().any(|atom| *atom == Atom::LeftParen) {
                     return Err("Unmatched right parenthesis");
                 }
 
-                while *stack.last().cloned().unwrap() != Atom::LeftParen {
+                while stack.last().cloned().unwrap() != Atom::LeftParen {
                     output.push(stack.pop().unwrap());
                 }
 
@@ -93,7 +93,7 @@ impl<'a> Molecule<'a> {
                         {
                             output.push(stack.pop().unwrap());
                         }
-                        stack.push(child);
+                        stack.push(*child);
                         break;
                     }
                 }
@@ -104,7 +104,7 @@ impl<'a> Molecule<'a> {
             output.push(stack.pop().unwrap());
         }
 
-        if output.iter().any(|atom| **atom == Atom::LeftParen) {
+        if output.iter().any(|atom| *atom == Atom::LeftParen) {
             return Err("Unmatched left parenthesis");
         }
 
@@ -181,10 +181,7 @@ mod tests {
                 Atom::RightParen,
             ])
             .sort()
-            .unwrap()
-            .iter()
-            .map(|atom| **atom)
-            .collect::<Vec<Atom>>(),
+            .unwrap(),
             vec![
                 Atom::Data(3),
                 Atom::Data(5),
@@ -207,16 +204,54 @@ mod tests {
                 Atom::Data(3),
             ])
             .sort()
-            .unwrap()
-            .iter()
-            .map(|atom| **atom)
-            .collect::<Vec<Atom>>(),
+            .unwrap(),
             vec![
                 Atom::Data(1),
                 Atom::Data(2),
                 Atom::Data(3),
                 Atom::Power,
                 Atom::Power,
+            ]
+        );
+
+        assert_eq!(
+            Molecule::new(vec![
+                Atom::Data(1),
+                Atom::Or,
+                Atom::Data(2),
+                Atom::Or,
+                Atom::Data(3),
+            ])
+            .sort()
+            .unwrap(),
+            vec![
+                Atom::Data(1),
+                Atom::Data(2),
+                Atom::Or,
+                Atom::Data(3),
+                Atom::Or,
+            ]
+        );
+
+        let mut molecule = Molecule::new(vec![
+            Atom::Data(2),
+            Atom::Equal,
+            Atom::Data(1),
+            Atom::Sum,
+            Atom::Data(1),
+        ]);
+        #[allow(unused_must_use)]
+        {
+            molecule.sort();
+        }
+        assert_eq!(
+            molecule.sort().unwrap(),
+            vec![
+                Atom::Data(2),
+                Atom::Data(1),
+                Atom::Data(1),
+                Atom::Sum,
+                Atom::Equal,
             ]
         );
     }
