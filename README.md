@@ -15,11 +15,15 @@ BoxScript's most defining feature is encouraging **thinking inside the box** whe
 
 ## Requirements
 
-- [Nix](https://nixos.org/download.html)
+[Rust](https://rustup.rs/)
+
+[LLVM 12+](https://releases.llvm.org/download.html)
+
+If you have [Nix](https://nixos.org/download.html) installed, you will not need to install these.
 
 ## Installation
 
-1. Clone the repository
+Clone the repository
 
 ```sh
 git clone https://github.com/boxscript/boxscript-rs.git
@@ -27,8 +31,36 @@ git clone https://github.com/boxscript/boxscript-rs.git
 
 ## Usage
 
-1. Run the code with Nix
+### With Nix
+
+Make sure Nix is installed:
+
+```sh
+nix --version
+```
+
+Then:
 
 ```sh
 nix-shell --run "cargo run [path/to/file.bs]"
+```
+
+### Without Nix
+
+Make sure Rust is installed:
+
+```sh
+rustc --version
+```
+
+Make sure LLVM is installed:
+
+```sh
+llvm-config --version
+```
+
+Then:
+
+```sh
+cargo run [path/to/file.bs]
 ```
