@@ -39,7 +39,7 @@ impl Atom {
             Atom::Sum | Atom::Difference => 7,
             Atom::Product | Atom::Quotient | Atom::Remainder => 8,
             Atom::Memory | Atom::Not => 9,
-            // Atom::Power => 10,
+            Atom::Power => 10,
             _ => 0,
         }
     }
@@ -366,5 +366,77 @@ mod tests {
         ])
         .run(&mut mem, &mut String::new());
         assert_eq!(mem, [(0, 1), (1, 2)].iter().cloned().collect());
+
+        assert_eq!(
+            Molecule::new(vec![
+                Atom::LeftParen,
+                Atom::LeftParen,
+                Atom::Data(0),
+                Atom::Difference,
+                Atom::Data(1),
+                Atom::RightParen,
+                Atom::Power,
+                Atom::Data(2),
+                Atom::Sum,
+                Atom::Data(3),
+                Atom::RightParen,
+                Atom::Quotient,
+                Atom::Data(2),
+            ])
+            .run(&mut HashMap::new(), &mut String::new()),
+            Ok((2, String::new()))
+        );
+
+        assert_eq!(
+            Molecule::new(vec![
+                Atom::Data(1),
+                Atom::LeftShift,
+                Atom::Data(2),
+                Atom::Xor,
+                Atom::Data(3),
+                Atom::RightShift,
+                Atom::Data(4),
+                Atom::And,
+                Atom::Data(5),
+                Atom::Or,
+                Atom::Not,
+                Atom::Data(6),
+            ])
+            .run(&mut HashMap::new(), &mut String::new()),
+            Ok((-3, String::new()))
+        );
+
+        assert_eq!(
+            Molecule::new(vec![
+                Atom::Data(1),
+                Atom::Less,
+                Atom::Data(0),
+                Atom::Greater,
+                Atom::Data(3),
+                Atom::NotEqual,
+                Atom::Data(1),
+                Atom::Equal,
+                Atom::Data(1),
+            ])
+            .run(&mut HashMap::new(), &mut String::new()),
+            Ok((1, String::new()))
+        );
+
+        assert_eq!(
+            Molecule::new(vec![
+                Atom::LeftParen,
+            ])
+            .run(&mut HashMap::new(), &mut String::new()),
+            Err("Unmatched left parenthesis")
+        );
+
+        assert_eq!(
+            Molecule::new(vec![
+                Atom::Output,
+                Atom::Data(55296),
+            ])
+            .run(&mut HashMap::new(), &mut String::new()),
+            Ok((55296, "\u{ffff}".to_string()))
+        );
     }
 }
