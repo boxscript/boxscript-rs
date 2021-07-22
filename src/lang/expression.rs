@@ -423,19 +423,13 @@ mod tests {
         );
 
         assert_eq!(
-            Molecule::new(vec![
-                Atom::LeftParen,
-            ])
-            .run(&mut HashMap::new(), &mut String::new()),
+            Molecule::new(vec![Atom::LeftParen,]).run(&mut HashMap::new(), &mut String::new()),
             Err("Unmatched left parenthesis")
         );
 
         assert_eq!(
-            Molecule::new(vec![
-                Atom::Output,
-                Atom::Data(55296),
-            ])
-            .run(&mut HashMap::new(), &mut String::new()),
+            Molecule::new(vec![Atom::Output, Atom::Data(55296),])
+                .run(&mut HashMap::new(), &mut String::new()),
             Ok((55296, "\u{ffff}".to_string()))
         );
     }
