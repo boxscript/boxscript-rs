@@ -67,14 +67,10 @@ impl Molecule {
         for child in &self.children {
             if let Atom::Data(_) = *child {
                 output.push(*child);
-            } else if *child == Atom::Power {
-                while !stack.is_empty()
-                    && stack.last().cloned().unwrap().precedence() > child.precedence()
-                {
-                    output.push(stack.pop().unwrap());
-                }
-                stack.push(*child);
-            } else if *child == Atom::LeftParen {
+            } else if *child == Atom::LeftParen || *child == Atom::Power {
+                // no operators are of higher precedence than exponentiation
+                // exponentiation is also right-associative
+                // so we can just push directly to the stack without looking at output
                 stack.push(*child);
             } else if *child == Atom::RightParen {
                 if !stack.iter().any(|atom| *atom == Atom::LeftParen) {
