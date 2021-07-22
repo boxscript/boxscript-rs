@@ -7,21 +7,26 @@ assignees: ''
 
 ---
 
-**Describe the bug**
+## Describe the bug
+
 A clear and concise description of what the bug is.
 
-**To Reproduce**
+## To Reproduce
+
 ```rs
 Minimal code to produce bug
 ```
 
-**Expected behavior**
+## Expected behavior
+
 A clear and concise description of what you expected to happen.
 
-**Actual behavior**
+## Actual behavior
+
 A clear and concise description of what actually happened. Paste outputs where applicable.
 
-**Platform**
- - Rust version: [e.g. stable 1.53.0]
- - LLVM version: [e.g. 12.0.1]
- - OS: [e.g. NixOS 21.05 on AArch64]
+## Platform
+
+- Rust version: [e.g. stable 1.53.0]
+- LLVM version: [e.g. 12.0.1]
+- OS: [e.g. NixOS 21.05 on AArch64]
