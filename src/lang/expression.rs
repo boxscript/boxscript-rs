@@ -1,3 +1,6 @@
+use super::interpreter::Runnable;
+use std::collections::HashMap;
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Atom {
     Greater,
@@ -103,6 +106,69 @@ impl Molecule {
         }
 
         Ok(self.sorted_children.as_ref().unwrap().to_vec())
+    }
+}
+
+impl Runnable for Molecule {
+    fn run(&mut self, memory: &mut HashMap<i128, i128>) -> Result<(i128, String), &str> {
+        let children = self.sort();
+        let mut stdout = String::new();
+
+        if children.is_err() {
+            return Err(children.err().unwrap());
+        }
+
+        let mut stack: Vec<i128> = vec![];
+        for child in children.unwrap() {
+            if let Atom::Data(num) = child {
+                stack.push(num);
+            } else if child == Atom::Memory {
+                let a = stack.pop().unwrap();
+                stack.push(*memory.get(&a).unwrap_or(&0));
+            } else if child == Atom::Not {
+                let a = stack.pop().unwrap();
+                stack.push(!a);
+            } else if child == Atom::Output {
+                let a = stack.pop().unwrap();
+
+                if let Some(chr) = std::char::from_u32(a as u32) {
+                    stdout.push(chr);
+                } else {
+                    stdout.push('\u{ffff}');
+                }
+
+                stack.push(a);
+            } else {
+                let b = stack.pop().unwrap();
+                let a = stack.pop().unwrap();
+
+                if child == Atom::Assign {
+                    memory.insert(a, b);
+                }
+
+                stack.push(match child {
+                    Atom::Sum => a + b,
+                    Atom::Difference => a - b,
+                    Atom::Product => a * b,
+                    Atom::Quotient => a / b,
+                    Atom::Remainder => a % b,
+                    Atom::LeftShift => a << b,
+                    Atom::RightShift => a >> b,
+                    Atom::And => a & b,
+                    Atom::Or => a | b,
+                    Atom::Xor => a ^ b,
+                    Atom::Less => (a < b) as i128,
+                    Atom::Greater => (a > b) as i128,
+                    Atom::Equal => (a == b) as i128,
+                    Atom::NotEqual => (a != b) as i128,
+                    Atom::Power => (a as f64).powi(b as i32).round() as i128,
+                    Atom::Memory => b,
+                    _ => 0,
+                });
+            }
+        }
+
+        Ok((stack.pop().unwrap_or(0), stdout))
     }
 }
 
