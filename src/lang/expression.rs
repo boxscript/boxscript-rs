@@ -162,7 +162,7 @@ impl Runnable for Molecule {
                     Atom::Equal => (a == b) as i128,
                     Atom::NotEqual => (a != b) as i128,
                     Atom::Power => (a as f64).powi(b as i32).round() as i128,
-                    Atom::Memory => b,
+                    Atom::Assign => b,
                     _ => 0,
                 });
             }
