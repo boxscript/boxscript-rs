@@ -57,51 +57,50 @@ impl Molecule {
     }
 
     pub fn sort(&mut self) -> Result<Vec<Atom>, &str> {
-        if self.sorted_children.is_some() {
-            return Ok(self.sorted_children.as_ref().unwrap().to_vec());
-        }
+        if self.sorted_children.is_none() {
+            let mut output: Vec<Atom> = Vec::new();
+            let mut stack: Vec<Atom> = Vec::new();
 
-        let mut output: Vec<Atom> = Vec::new();
-        let mut stack: Vec<Atom> = Vec::new();
+            for child in &self.children {
+                if let Atom::Data(_) = *child {
+                    output.push(*child);
+                } else if *child == Atom::LeftParen || *child == Atom::Power {
+                    // no operators are of higher precedence than exponentiation
+                    // exponentiation is also right-associative
+                    // so we can just push directly to the stack without looking at output
+                    stack.push(*child);
+                } else if *child == Atom::RightParen {
+                    if !stack.iter().any(|atom| *atom == Atom::LeftParen) {
+                        return Err("Unmatched right parenthesis");
+                    }
 
-        for child in &self.children {
-            if let Atom::Data(_) = *child {
-                output.push(*child);
-            } else if *child == Atom::LeftParen || *child == Atom::Power {
-                // no operators are of higher precedence than exponentiation
-                // exponentiation is also right-associative
-                // so we can just push directly to the stack without looking at output
-                stack.push(*child);
-            } else if *child == Atom::RightParen {
-                if !stack.iter().any(|atom| *atom == Atom::LeftParen) {
-                    return Err("Unmatched right parenthesis");
+                    while stack.last().cloned().unwrap() != Atom::LeftParen {
+                        output.push(stack.pop().unwrap());
+                    }
+
+                    stack.pop();
+                } else {
+                    let precedence = child.precedence();
+
+                    while !stack.is_empty()
+                        && stack.last().cloned().unwrap().precedence() >= precedence
+                    {
+                        output.push(stack.pop().unwrap());
+                    }
+                    stack.push(*child);
                 }
-
-                while stack.last().cloned().unwrap() != Atom::LeftParen {
-                    output.push(stack.pop().unwrap());
-                }
-
-                stack.pop();
-            } else {
-                let precedence = child.precedence();
-
-                while !stack.is_empty() && stack.last().cloned().unwrap().precedence() >= precedence
-                {
-                    output.push(stack.pop().unwrap());
-                }
-                stack.push(*child);
             }
-        }
 
-        while !stack.is_empty() {
-            output.push(stack.pop().unwrap());
-        }
+            while !stack.is_empty() {
+                output.push(stack.pop().unwrap());
+            }
 
-        if output.iter().any(|atom| *atom == Atom::LeftParen) {
-            return Err("Unmatched left parenthesis");
-        }
+            if output.iter().any(|atom| *atom == Atom::LeftParen) {
+                return Err("Unmatched left parenthesis");
+            }
 
-        self.sorted_children = Some(output);
+            self.sorted_children = Some(output);
+        }
 
         Ok(self.sorted_children.as_ref().unwrap().to_vec())
     }
