@@ -110,9 +110,12 @@ impl Molecule {
 }
 
 impl Runnable for Molecule {
-    fn run(&mut self, memory: &mut HashMap<i128, i128>) -> Result<(i128, String), &str> {
+    fn run(
+        &mut self,
+        memory: &mut HashMap<i128, i128>,
+        stdout: &mut String,
+    ) -> Result<(i128, String), &str> {
         let children = self.sort();
-        let mut stdout = String::new();
 
         if children.is_err() {
             return Err(children.err().unwrap());
@@ -168,10 +171,11 @@ impl Runnable for Molecule {
             }
         }
 
-        Ok((stack.pop().unwrap_or(0), stdout))
+        Ok((stack.pop().unwrap_or(0), stdout.to_string()))
     }
 }
 
+#[allow(unused_must_use)]
 #[cfg(test)]
 mod tests {
     #[test]
@@ -308,10 +312,7 @@ mod tests {
             Atom::Sum,
             Atom::Data(1),
         ]);
-        #[allow(unused_must_use)]
-        {
-            molecule.sort();
-        }
+        molecule.sort();
         assert_eq!(
             molecule.sort().unwrap(),
             vec![
@@ -322,5 +323,48 @@ mod tests {
                 Atom::Equal,
             ]
         );
+    }
+
+    #[test]
+    fn test_molecule_run() {
+        use super::{Atom, Molecule, Runnable};
+        use std::collections::HashMap;
+
+        assert_eq!(
+            Molecule::new(vec![
+                Atom::LeftParen,
+                Atom::Data(3),
+                Atom::Sum,
+                Atom::Data(5),
+                Atom::RightParen,
+                Atom::Product,
+                Atom::Data(7),
+            ])
+            .run(&mut HashMap::new(), &mut String::new()),
+            Ok((56, String::new()))
+        );
+
+        assert_eq!(
+            Molecule::new(vec![Atom::Output, Atom::Data(48),])
+                .run(&mut HashMap::new(), &mut String::new()),
+            Ok((48, "0".to_string()))
+        );
+
+        assert_eq!(
+            Molecule::new(vec![Atom::Output, Atom::Memory, Atom::Data(0),])
+                .run(&mut [(0, 48)].iter().cloned().collect(), &mut String::new()),
+            Ok((48, "0".to_string()))
+        );
+
+        let mut mem: HashMap<i128, i128> = [(1, 2)].iter().cloned().collect();
+        Molecule::new(vec![
+            Atom::Data(0),
+            Atom::Assign,
+            Atom::Data(1),
+            Atom::Assign,
+            Atom::Data(2),
+        ])
+        .run(&mut mem, &mut String::new());
+        assert_eq!(mem, [(0, 1), (1, 2)].iter().cloned().collect());
     }
 }
