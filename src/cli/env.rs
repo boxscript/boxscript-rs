@@ -28,27 +28,15 @@ mod tests {
         use super::read;
 
         assert_eq!(
-            read(
-                ["a", "b"]
-                    .iter()
-                    .map(|s| String::from(*s))
-                    .collect()
-            ),
+            read(["a", "b"].iter().map(|s| String::from(*s)).collect()),
             Err(String::from(
                 "\u{001b}[31mExactly 1 argument is required: `filename`\u{001b}[0m",
             ))
         );
 
         assert_eq!(
-            read(
-                [""]
-                    .iter()
-                    .map(|s| String::from(*s))
-                    .collect()
-            ),
-            Err(String::from(
-                "\u{001b}[31mNo file exists at ``\u{001b}[0m",
-            ))
+            read([""].iter().map(|s| String::from(*s)).collect()),
+            Err(String::from("\u{001b}[31mNo file exists at ``\u{001b}[0m",))
         );
 
         assert_eq!(
@@ -58,9 +46,7 @@ mod tests {
                     .map(|s| String::from(*s))
                     .collect()
             ),
-            Ok(String::from(
-                "pub mod env;\n",
-            ))
+            Ok(String::from("pub mod env;\n",))
         );
     }
 }
