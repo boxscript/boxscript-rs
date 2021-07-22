@@ -165,8 +165,7 @@ impl Runnable for Molecule {
                     Atom::Equal => (a == b) as i128,
                     Atom::NotEqual => (a != b) as i128,
                     Atom::Power => (a as f64).powi(b as i32).round() as i128,
-                    Atom::Assign => b,
-                    _ => 0,
+                    _ => b,
                 });
             }
         }
@@ -382,6 +381,8 @@ mod tests {
                 Atom::RightParen,
                 Atom::Quotient,
                 Atom::Data(2),
+                Atom::Remainder,
+                Atom::Data(3),
             ])
             .run(&mut HashMap::new(), &mut String::new()),
             Ok((2, String::new()))
