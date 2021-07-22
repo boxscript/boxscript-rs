@@ -36,7 +36,7 @@ impl Atom {
             Atom::Sum | Atom::Difference => 7,
             Atom::Product | Atom::Quotient | Atom::Remainder => 8,
             Atom::Memory | Atom::Not => 9,
-            Atom::Power => 10,
+            // Atom::Power => 10,
             _ => 0,
         }
     }
@@ -217,6 +217,8 @@ mod tests {
                 Atom::Data(2),
                 Atom::Or,
                 Atom::Data(3),
+                Atom::And,
+                Atom::Data(4),
             ])
             .sort()
             .unwrap(),
@@ -228,6 +230,8 @@ mod tests {
                 Atom::Data(2),
                 Atom::Xor,
                 Atom::Data(3),
+                Atom::Data(4),
+                Atom::And,
                 Atom::Or,
             ]
         );
