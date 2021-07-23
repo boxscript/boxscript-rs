@@ -353,16 +353,17 @@ mod tests {
                 .run(&mut HashMap::new(), &mut String::new()),
             Err("Malformed expression")
         );
+    }
 
+    #[test]
+    fn it_detects_bad_parentheses() {
         assert_eq!(
-            Molecule::new(vec![Atom::LeftParen])
-                .run(&mut HashMap::new(), &mut String::new()),
+            Molecule::new(vec![Atom::LeftParen]).run(&mut HashMap::new(), &mut String::new()),
             Err("Malformed expression")
         );
 
         assert_eq!(
-            Molecule::new(vec![Atom::RightParen])
-                .run(&mut HashMap::new(), &mut String::new()),
+            Molecule::new(vec![Atom::RightParen]).run(&mut HashMap::new(), &mut String::new()),
             Err("Malformed expression")
         );
     }
@@ -445,6 +446,44 @@ mod tests {
             .run(&mut HashMap::new(), &mut String::new())
             .unwrap(),
             (-9, String::new())
+        );
+
+        assert_eq!(
+            Molecule::new(vec![
+                Atom::Data(0),
+                Atom::Less,
+                Atom::Data(1),
+                Atom::Greater,
+                Atom::Data(2),
+                Atom::Equal,
+                Atom::Data(0),
+                Atom::NotEqual,
+                Atom::Data(-1),
+            ])
+            .run(&mut HashMap::new(), &mut String::new())
+            .unwrap(),
+            (1, String::new())
+        );
+
+        assert_eq!(
+            Molecule::new(vec![
+                Atom::LeftParen,
+                Atom::LeftParen,
+                Atom::Data(0),
+                Atom::Sum,
+                Atom::Data(2),
+                Atom::RightParen,
+                Atom::Power,
+                Atom::Data(2),
+                Atom::Power,
+                Atom::Data(2),
+                Atom::Difference,
+                Atom::Data(8),
+                Atom::RightParen,
+            ])
+            .run(&mut HashMap::new(), &mut String::new())
+            .unwrap(),
+            (8, String::new())
         );
     }
 }
