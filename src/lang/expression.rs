@@ -93,6 +93,10 @@ impl Molecule {
             }
             *valid = true;
 
+            if list.is_empty() {
+                return Ok(());
+            }
+
             for i in 0..list.len() {
                 if i == 0 {
                     *valid &= list[i] == AtomType::Number && list[i + 1] == AtomType::Binary
@@ -282,6 +286,69 @@ mod tests {
             Molecule::new(vec![Atom::Output, Atom::Data(55296),])
                 .run(&mut HashMap::new(), &mut String::new()),
             Ok((55296, "\u{ffff}".to_string()))
+        );
+    }
+
+    #[test]
+    fn it_detects_bad_expressions() {
+        assert_eq!(
+            Molecule::new(vec![Atom::Data(0), Atom::Data(0)])
+                .run(&mut HashMap::new(), &mut String::new()),
+            Err("Malformed expression")
+        );
+
+        assert_eq!(
+            Molecule::new(vec![Atom::Product, Atom::Data(0)])
+                .run(&mut HashMap::new(), &mut String::new()),
+            Err("Malformed expression")
+        );
+
+        assert_eq!(
+            Molecule::new(vec![Atom::Difference, Atom::Not])
+                .run(&mut HashMap::new(), &mut String::new()),
+            Err("Malformed expression")
+        );
+
+        assert_eq!(
+            Molecule::new(vec![Atom::Output, Atom::Memory])
+                .run(&mut HashMap::new(), &mut String::new()),
+            Err("Malformed expression")
+        );
+
+        assert_eq!(
+            Molecule::new(vec![Atom::Not, Atom::Remainder])
+                .run(&mut HashMap::new(), &mut String::new()),
+            Err("Malformed expression")
+        );
+
+        assert_eq!(
+            Molecule::new(vec![Atom::Data(0), Atom::Xor])
+                .run(&mut HashMap::new(), &mut String::new()),
+            Err("Malformed expression")
+        );
+
+        assert_eq!(
+            Molecule::new(vec![Atom::And])
+                .run(&mut HashMap::new(), &mut String::new()),
+            Err("Malformed expression")
+        );
+
+        assert_eq!(
+            Molecule::new(vec![Atom::Data(0), Atom::And, Atom::Quotient])
+                .run(&mut HashMap::new(), &mut String::new()),
+            Err("Malformed expression")
+        );
+
+        assert_eq!(
+            Molecule::new(vec![Atom::And, Atom::LeftShift, Atom::Data(0)])
+                .run(&mut HashMap::new(), &mut String::new()),
+            Err("Malformed expression")
+        );
+
+        assert_eq!(
+            Molecule::new(vec![Atom::RightParen, Atom::LeftParen])
+                .run(&mut HashMap::new(), &mut String::new()),
+            Err("Malformed expression")
         );
     }
 }
