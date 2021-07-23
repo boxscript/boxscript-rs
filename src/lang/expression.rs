@@ -364,7 +364,7 @@ mod tests {
 
     #[test]
     fn it_works_twice() {
-        let mut mol =  Molecule::new(vec![Atom::Data(2), Atom::Sum, Atom::Data(2)]);
+        let mut mol = Molecule::new(vec![Atom::Data(2), Atom::Sum, Atom::Data(2)]);
         mol.run(&mut HashMap::new(), &mut String::new());
         assert_eq!(
             mol.run(&mut HashMap::new(), &mut String::new()).unwrap(),
