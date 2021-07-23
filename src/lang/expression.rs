@@ -67,12 +67,12 @@ impl Molecule {
             for child in &self.children {
                 if let Atom::Data(_) = *child {
                     output.push(*child);
-                } else if *child == Atom::LeftParen || *child == Atom::Power {
+                } else if let Atom::LeftParen | Atom::Power = *child {
                     // no operators are of higher precedence than exponentiation
                     // exponentiation is also right-associative
                     // so we can just push directly to the stack without looking at output
                     stack.push(*child);
-                } else if *child == Atom::RightParen {
+                } else if let Atom::RightParen = *child {
                     if !stack.iter().any(|atom| *atom == Atom::LeftParen) {
                         return Err("Unmatched right parenthesis");
                     }
@@ -125,27 +125,26 @@ impl Runnable for Molecule {
         for child in children.unwrap() {
             if let Atom::Data(num) = child {
                 stack.push(num);
-            } else if child == Atom::Memory {
+            } else if let Atom::Memory = child{
                 let a = stack.pop().unwrap();
                 stack.push(*memory.get(&a).unwrap_or(&0));
-            } else if child == Atom::Not {
+            } else if let Atom::Not = child {
                 let a = stack.pop().unwrap();
                 stack.push(!a);
-            } else if child == Atom::Output {
+            } else if let Atom::Output = child {
                 let a = stack.pop().unwrap();
+                stack.push(a);
 
                 if let Some(chr) = std::char::from_u32(a as u32) {
                     stdout.push(chr);
                 } else {
                     stdout.push('\u{ffff}');
                 }
-
-                stack.push(a);
             } else {
                 let b = stack.pop().unwrap();
                 let a = stack.pop().unwrap();
 
-                if child == Atom::Assign {
+                if let Atom::Assign = child {
                     memory.insert(a, b);
                 }
 
