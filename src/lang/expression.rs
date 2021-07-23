@@ -45,10 +45,18 @@ impl Atom {
     }
 }
 
+#[derive(Debug, PartialEq)]
+pub enum AtomType {
+    Number,
+    Binary,
+    Unary,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Molecule {
     children: Vec<Atom>,
     sorted_children: Option<Vec<Atom>>,
+    valid: bool,
 }
 
 impl Molecule {
@@ -56,21 +64,79 @@ impl Molecule {
         Molecule {
             children,
             sorted_children: None,
+            valid: false,
         }
     }
 
-    pub fn sort(&mut self) -> Result<Vec<Atom>, &str> {
-        if self.sorted_children.is_none() {
+    pub fn validate<'a>(children: &'a [Atom], valid: &mut bool) -> Result<(), &'a str> {
+        if !*valid {
+            let mut list: Vec<AtomType> = vec![];
+            for child in children {
+                if let Atom::LeftParen | Atom::RightParen = child {
+                } else if let Atom::Output | Atom::Memory | Atom::Not = child {
+                    list.push(AtomType::Unary);
+                } else if let Atom::Data(_) = child {
+                    list.push(AtomType::Number);
+                } else {
+                    list.push(AtomType::Binary);
+                }
+            }
+
+            if list.len() == 1 && list[0] != AtomType::Number
+                || list.len() == 2 && (list[0] != AtomType::Unary || list[1] != AtomType::Number)
+            {
+                return Err("Malformed expression");
+            }
+            *valid = true;
+
+            for i in 0..list.len() {
+                if i == 0 {
+                    *valid &= list[i] == AtomType::Number && list[i + 1] == AtomType::Binary
+                        || list[i] == AtomType::Unary && list[i + 1] != AtomType::Binary;
+                } else if i == list.len() - 1 {
+                    *valid &= (list[i - 1] == AtomType::Binary || list[i - 1] == AtomType::Unary)
+                        && list[i] == AtomType::Number;
+                } else {
+                    *valid &= match list[i] {
+                        AtomType::Number => {
+                            list[i - 1] != AtomType::Number && list[i + 1] != AtomType::Number
+                        }
+                        AtomType::Unary => {
+                            list[i - 1] != AtomType::Number && list[i + 1] != AtomType::Binary
+                        }
+                        AtomType::Binary => {
+                            list[i - 1] == AtomType::Number && list[i + 1] != AtomType::Binary
+                        }
+                    };
+                }
+            }
+
+            if !*valid {
+                return Err("Malformed expression");
+            }
+
+            Ok(())
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn sort<'a>(
+        children: &'a [Atom],
+        sorted: &'a mut Option<Vec<Atom>>,
+    ) -> Result<Vec<Atom>, &'a str> {
+        if sorted.is_none() {
             let mut output: Vec<Atom> = Vec::new();
             let mut stack: Vec<Atom> = Vec::new();
 
-            for child in &self.children {
+            for child in children {
                 if let Atom::Data(_) = *child {
                     output.push(*child);
-                } else if let Atom::LeftParen | Atom::Power = *child {
+                } else if let Atom::LeftParen | Atom::Power | Atom::Not | Atom::Memory = *child {
                     // no operators are of higher precedence than exponentiation
                     // exponentiation is also right-associative
                     // so we can just push directly to the stack without looking at output
+                    // unary prefix operators are also pushed to stack
                     stack.push(*child);
                 } else if let Atom::RightParen = *child {
                     while !stack.is_empty() && stack.last().cloned().unwrap() != Atom::LeftParen {
@@ -78,7 +144,7 @@ impl Molecule {
                     }
 
                     if stack.is_empty() || stack.last().cloned().unwrap() != Atom::LeftParen {
-                        return Err("Unmatched right parenthesis");
+                        return Err("Malformed expression");
                     }
 
                     stack.pop();
@@ -97,16 +163,16 @@ impl Molecule {
 
             while !stack.is_empty() {
                 if let Atom::LeftParen = stack.last().cloned().unwrap() {
-                    return Err("Unmatched left parenthesis");
+                    return Err("Malformed expression");
                 }
 
                 output.push(stack.pop().unwrap());
             }
 
-            self.sorted_children = Some(output);
+            *sorted = Some(output);
         }
 
-        Ok(self.sorted_children.as_ref().unwrap().to_vec())
+        Ok(sorted.as_ref().unwrap().to_vec())
     }
 }
 
@@ -116,7 +182,12 @@ impl Runnable for Molecule {
         memory: &mut HashMap<i128, i128>,
         stdout: &mut String,
     ) -> Result<(i128, String), &str> {
-        let children = self.sort();
+        let validity = Molecule::validate(&self.children, &mut self.valid);
+
+        if validity.is_err() {
+            return Err(validity.err().unwrap());
+        }
+        let children = Molecule::sort(&self.children, &mut self.sorted_children);
 
         if children.is_err() {
             return Err(children.err().unwrap());
@@ -126,22 +197,30 @@ impl Runnable for Molecule {
         for child in children.unwrap() {
             if let Atom::Data(num) = child {
                 stack.push(num);
-            } else if let Atom::Memory = child {
-                let a = stack.pop().unwrap();
-                stack.push(*memory.get(&a).unwrap_or(&0));
-            } else if let Atom::Not = child {
-                let a = stack.pop().unwrap();
-                stack.push(!a);
-            } else if let Atom::Output = child {
-                let a = stack.pop().unwrap();
-                stack.push(a);
+            } else if let Atom::Memory | Atom::Not | Atom::Output = child {
+                if stack.is_empty() {
+                    return Err("Malformed expression");
+                }
 
-                if let Some(chr) = std::char::from_u32(a as u32) {
-                    stdout.push(chr);
-                } else {
-                    stdout.push('\u{ffff}');
+                let a = stack.pop().unwrap();
+
+                if let Atom::Memory = child {
+                    stack.push(*memory.get(&a).unwrap_or(&0));
+                } else if let Atom::Not = child {
+                    stack.push(!a);
+                } else if let Atom::Output = child {
+                    stack.push(a);
+
+                    if let Some(chr) = std::char::from_u32(a as u32) {
+                        stdout.push(chr);
+                    } else {
+                        stdout.push('\u{ffff}');
+                    }
                 }
             } else {
+                if stack.len() < 2 {
+                    return Err("Malformed expression");
+                }
                 let b = stack.pop().unwrap();
                 let a = stack.pop().unwrap();
 
@@ -168,6 +247,10 @@ impl Runnable for Molecule {
                     _ => b,
                 });
             }
+        }
+
+        if stack.len() > 1 {
+            return Err("Malformed expression");
         }
 
         Ok((stack.pop().unwrap_or(0), stdout.to_string()))
@@ -197,6 +280,7 @@ mod tests {
             Molecule {
                 children: vec![Atom::Data(1), Atom::Sum, Atom::Data(1),],
                 sorted_children: None,
+                valid: false,
             }
         );
     }
@@ -206,42 +290,46 @@ mod tests {
         use super::{Atom, Molecule};
 
         assert_eq!(
-            Molecule::new(vec![Atom::LeftParen]).sort(),
-            Err("Unmatched left parenthesis")
+            Molecule::sort(&[Atom::LeftParen], &mut None),
+            Err("Malformed expression")
         );
 
         assert_eq!(
-            Molecule::new(vec![
-                Atom::LeftParen,
-                Atom::Data(3),
-                Atom::Sum,
-                Atom::Data(5),
-                Atom::RightParen,
-                Atom::Product,
-                Atom::Data(7),
-                Atom::RightParen,
-            ])
-            .sort(),
-            Err("Unmatched right parenthesis")
+            Molecule::sort(
+                &[
+                    Atom::LeftParen,
+                    Atom::Data(3),
+                    Atom::Sum,
+                    Atom::Data(5),
+                    Atom::RightParen,
+                    Atom::Product,
+                    Atom::Data(7),
+                    Atom::RightParen,
+                ],
+                &mut None
+            ),
+            Err("Malformed expression")
         );
 
         assert_eq!(
-            Molecule::new(vec![
-                Atom::LeftParen,
-                Atom::Data(3),
-                Atom::Sum,
-                Atom::Data(5),
-                Atom::RightParen,
-                Atom::Product,
-                Atom::LeftParen,
-                Atom::Data(2),
-                Atom::Difference,
-                Atom::Data(7),
-                Atom::Quotient,
-                Atom::Data(9),
-                Atom::RightParen,
-            ])
-            .sort()
+            Molecule::sort(
+                &[
+                    Atom::LeftParen,
+                    Atom::Data(3),
+                    Atom::Sum,
+                    Atom::Data(5),
+                    Atom::RightParen,
+                    Atom::Product,
+                    Atom::LeftParen,
+                    Atom::Data(2),
+                    Atom::Difference,
+                    Atom::Data(7),
+                    Atom::Quotient,
+                    Atom::Data(9),
+                    Atom::RightParen,
+                ],
+                &mut None
+            )
             .unwrap(),
             vec![
                 Atom::Data(3),
@@ -257,14 +345,16 @@ mod tests {
         );
 
         assert_eq!(
-            Molecule::new(vec![
-                Atom::Data(1),
-                Atom::Power,
-                Atom::Data(2),
-                Atom::Power,
-                Atom::Data(3),
-            ])
-            .sort()
+            Molecule::sort(
+                &[
+                    Atom::Data(1),
+                    Atom::Power,
+                    Atom::Data(2),
+                    Atom::Power,
+                    Atom::Data(3),
+                ],
+                &mut None
+            )
             .unwrap(),
             vec![
                 Atom::Data(1),
@@ -276,19 +366,21 @@ mod tests {
         );
 
         assert_eq!(
-            Molecule::new(vec![
-                Atom::Data(0),
-                Atom::LeftShift,
-                Atom::Not,
-                Atom::Data(1),
-                Atom::Xor,
-                Atom::Data(2),
-                Atom::Or,
-                Atom::Data(3),
-                Atom::And,
-                Atom::Data(4),
-            ])
-            .sort()
+            Molecule::sort(
+                &vec![
+                    Atom::Data(0),
+                    Atom::LeftShift,
+                    Atom::Not,
+                    Atom::Data(1),
+                    Atom::Xor,
+                    Atom::Data(2),
+                    Atom::Or,
+                    Atom::Data(3),
+                    Atom::And,
+                    Atom::Data(4),
+                ],
+                &mut None
+            )
             .unwrap(),
             vec![
                 Atom::Data(0),
@@ -311,9 +403,9 @@ mod tests {
             Atom::Sum,
             Atom::Data(1),
         ]);
-        molecule.sort();
+        Molecule::sort(&molecule.children, &mut molecule.sorted_children);
         assert_eq!(
-            molecule.sort().unwrap(),
+            Molecule::sort(&molecule.children, &mut molecule.sorted_children).unwrap(),
             vec![
                 Atom::Data(2),
                 Atom::Data(1),
@@ -353,6 +445,43 @@ mod tests {
             Molecule::new(vec![Atom::Output, Atom::Memory, Atom::Data(0),])
                 .run(&mut [(0, 48)].iter().cloned().collect(), &mut String::new()),
             Ok((48, "0".to_string()))
+        );
+
+        assert_eq!(
+            Molecule::new(vec![Atom::Data(0), Atom::Sum, Atom::Sum, Atom::Data(0),])
+                .run(&mut HashMap::new(), &mut String::new()),
+            Err("Malformed expression")
+        );
+
+        assert_eq!(
+            Molecule::new(vec![
+                Atom::Not,
+                Atom::Memory,
+                Atom::Sum,
+                Atom::Data(0),
+                Atom::Data(1),
+            ])
+            .run(&mut HashMap::new(), &mut String::new()),
+            Err("Malformed expression")
+        );
+
+        assert_eq!(
+            Molecule::new(vec![Atom::Data(0), Atom::Data(1), Atom::Sum,])
+                .run(&mut HashMap::new(), &mut String::new()),
+            Err("Malformed expression")
+        );
+
+        assert_eq!(
+            Molecule::new(vec![
+                Atom::LeftParen,
+                Atom::Data(0),
+                Atom::RightParen,
+                Atom::LeftParen,
+                Atom::Data(1),
+                Atom::RightParen,
+            ])
+            .run(&mut HashMap::new(), &mut String::new()),
+            Err("Malformed expression")
         );
 
         let mut mem: HashMap<i128, i128> = [(1, 2)].iter().cloned().collect();
@@ -425,7 +554,7 @@ mod tests {
 
         assert_eq!(
             Molecule::new(vec![Atom::LeftParen,]).run(&mut HashMap::new(), &mut String::new()),
-            Err("Unmatched left parenthesis")
+            Err("Malformed expression")
         );
 
         assert_eq!(
