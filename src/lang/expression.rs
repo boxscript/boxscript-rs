@@ -210,10 +210,6 @@ impl Runnable for Molecule {
             if let Atom::Data(num) = child {
                 stack.push(num);
             } else if let Atom::Memory | Atom::Not | Atom::Output = child {
-                if stack.is_empty() {
-                    return Err("Malformed expression");
-                }
-
                 let a = stack.pop().unwrap();
 
                 if let Atom::Memory = child {
@@ -230,9 +226,6 @@ impl Runnable for Molecule {
                     }
                 }
             } else {
-                if stack.len() < 2 {
-                    return Err("Malformed expression");
-                }
                 let b = stack.pop().unwrap();
                 let a = stack.pop().unwrap();
 
@@ -259,10 +252,6 @@ impl Runnable for Molecule {
                     _ => b,
                 });
             }
-        }
-
-        if stack.len() > 1 {
-            return Err("Malformed expression");
         }
 
         Ok((stack.pop().unwrap_or(0), stdout.to_string()))
