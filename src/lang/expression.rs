@@ -73,12 +73,12 @@ impl Molecule {
                     // so we can just push directly to the stack without looking at output
                     stack.push(*child);
                 } else if let Atom::RightParen = *child {
-                    if !stack.iter().any(|atom| *atom == Atom::LeftParen) {
-                        return Err("Unmatched right parenthesis");
+                    while !stack.is_empty() && stack.last().cloned().unwrap() != Atom::LeftParen {
+                        output.push(stack.pop().unwrap());
                     }
 
-                    while stack.last().cloned().unwrap() != Atom::LeftParen {
-                        output.push(stack.pop().unwrap());
+                    if stack.is_empty() || stack.last().cloned().unwrap() != Atom::LeftParen {
+                        return Err("Unmatched right parenthesis");
                     }
 
                     stack.pop();
@@ -90,16 +90,17 @@ impl Molecule {
                     {
                         output.push(stack.pop().unwrap());
                     }
+
                     stack.push(*child);
                 }
             }
 
             while !stack.is_empty() {
-                output.push(stack.pop().unwrap());
-            }
+                if let Atom::LeftParen = stack.last().cloned().unwrap() {
+                    return Err("Unmatched left parenthesis");
+                }
 
-            if output.iter().any(|atom| *atom == Atom::LeftParen) {
-                return Err("Unmatched left parenthesis");
+                output.push(stack.pop().unwrap());
             }
 
             self.sorted_children = Some(output);
