@@ -140,11 +140,7 @@ impl Molecule {
             for child in children {
                 if let Atom::Data(_) = *child {
                     output.push(*child);
-                } else if let Atom::LeftParen | Atom::Power | Atom::Not | Atom::Memory = *child {
-                    // no operators are of higher precedence than exponentiation
-                    // exponentiation is also right-associative
-                    // so we can just push directly to the stack without looking at output
-                    // unary prefix operators are also pushed to stack
+                } else if let Atom::LeftParen | Atom::Not | Atom::Memory = *child {
                     stack.push(*child);
                 } else if let Atom::RightParen = *child {
                     while !stack.is_empty() && stack.last().cloned().unwrap() != Atom::LeftParen {
@@ -159,10 +155,18 @@ impl Molecule {
                 } else {
                     let precedence = child.precedence();
 
-                    while !stack.is_empty()
-                        && stack.last().cloned().unwrap().precedence() >= precedence
-                    {
-                        output.push(stack.pop().unwrap());
+                    if let Atom::Power | Atom::Assign = *child {
+                        while !stack.is_empty()
+                            && stack.last().cloned().unwrap().precedence() > precedence
+                        {
+                            output.push(stack.pop().unwrap());
+                        }
+                    } else {
+                        while !stack.is_empty()
+                            && stack.last().cloned().unwrap().precedence() >= precedence
+                        {
+                            output.push(stack.pop().unwrap());
+                        }
                     }
 
                     stack.push(*child);
