@@ -415,6 +415,8 @@ mod tests {
         hm.insert(0, 48);
         Molecule::new(vec![
             Atom::Data(2),
+            Atom::Sum,
+            Atom::Data(1),
             Atom::Assign,
             Atom::Data(1),
             Atom::Assign,
@@ -423,7 +425,7 @@ mod tests {
             Atom::Data(1),
         ])
         .run(&mut hm, &mut String::new());
-        assert_eq!(hm, [(0, 1), (1, 1), (2, 1)].iter().cloned().collect());
+        assert_eq!(hm, [(0, 1), (1, 1), (3, 1)].iter().cloned().collect());
     }
 
     #[test]
