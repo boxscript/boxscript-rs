@@ -401,6 +401,15 @@ mod tests {
                 .unwrap(),
             (48, "0".to_string())
         );
+        Molecule::new(vec![Atom::Data(0), Atom::Assign, Atom::Data(13)])
+            .run(&mut hm, &mut String::new());
+        assert_eq!(hm, [(0, 13)].iter().cloned().collect());
+        assert_eq!(
+            Molecule::new(vec![Atom::Memory, Atom::Data(13)])
+                .run(&mut HashMap::new(), &mut String::new())
+                .unwrap(),
+            (0, String::new())
+        );
     }
 
     #[test]
