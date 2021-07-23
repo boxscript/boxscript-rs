@@ -125,7 +125,7 @@ impl Runnable for Molecule {
         for child in children.unwrap() {
             if let Atom::Data(num) = child {
                 stack.push(num);
-            } else if let Atom::Memory = child{
+            } else if let Atom::Memory = child {
                 let a = stack.pop().unwrap();
                 stack.push(*memory.get(&a).unwrap_or(&0));
             } else if let Atom::Not = child {
