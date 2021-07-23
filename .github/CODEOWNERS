@@ -1,2 +1,2 @@
-
-.github/workflows/** @onerandomusername
+/.github/workflows/* @onerandomusername
+/.github/CODEOWNERS @pyxiis
