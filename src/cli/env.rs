@@ -1,6 +1,6 @@
 use std::fs;
 
-fn read(args: Vec<String>) -> Result<String, String> {
+pub fn read(args: Vec<String>) -> Result<String, String> {
     if args.len() != 1 {
         return Err(String::from(
             "\u{001b}[31mExactly 1 argument is required: `filename`\u{001b}[0m",
