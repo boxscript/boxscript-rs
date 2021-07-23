@@ -393,12 +393,48 @@ mod tests {
 
     #[test]
     fn it_works_with_memory() {
-        let mut mol = Molecule::new(vec![Atom::Output, Atom::Memory, Atom::Data(0)]);
         let mut hm = HashMap::<i128, i128>::new();
         hm.insert(0, 48);
         assert_eq!(
-            mol.run(&mut hm, &mut String::new()).unwrap(),
+            Molecule::new(vec![Atom::Output, Atom::Memory, Atom::Data(0)])
+                .run(&mut hm, &mut String::new())
+                .unwrap(),
             (48, "0".to_string())
+        );
+    }
+
+    #[test]
+    fn it_works_complex() {
+        assert_eq!(
+            Molecule::new(vec![
+                Atom::Not,
+                Atom::Data(0),
+                Atom::Sum,
+                Atom::Data(1),
+                Atom::Difference,
+                Atom::Data(2),
+                Atom::Product,
+                Atom::Data(3),
+                Atom::Quotient,
+                Atom::Data(4),
+                Atom::Remainder,
+                Atom::Data(5),
+                Atom::LeftShift,
+                Atom::Data(6),
+                Atom::RightShift,
+                Atom::Data(7),
+                Atom::Xor,
+                Atom::Data(8),
+                Atom::Or,
+                Atom::Data(9),
+                Atom::And,
+                Atom::Data(10),
+                Atom::Power,
+                Atom::Data(11),
+            ])
+            .run(&mut HashMap::new(), &mut String::new())
+            .unwrap(),
+            (-9, String::new())
         );
     }
 }
