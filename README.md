@@ -31,6 +31,12 @@ git clone https://github.com/boxscript/boxscript-rs.git
 
 ## Usage
 
+CD to where you cloned the repository:
+
+```sh
+cd [path/to/boxscript]
+```
+
 ### With Nix
 
 Make sure Nix is installed:
