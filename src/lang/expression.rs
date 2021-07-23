@@ -353,6 +353,18 @@ mod tests {
                 .run(&mut HashMap::new(), &mut String::new()),
             Err("Malformed expression")
         );
+
+        assert_eq!(
+            Molecule::new(vec![Atom::LeftParen])
+                .run(&mut HashMap::new(), &mut String::new()),
+            Err("Malformed expression")
+        );
+
+        assert_eq!(
+            Molecule::new(vec![Atom::RightParen])
+                .run(&mut HashMap::new(), &mut String::new()),
+            Err("Malformed expression")
+        );
     }
 
     #[test]
