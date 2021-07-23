@@ -345,9 +345,30 @@ mod tests {
         );
 
         assert_eq!(
+            Molecule::new(vec![Atom::And, Atom::Not, Atom::Data(0)])
+                .run(&mut HashMap::new(), &mut String::new()),
+            Err("Malformed expression")
+        );
+        assert_eq!(
+            Molecule::new(vec![Atom::And, Atom::Data(0), Atom::Greater])
+                .run(&mut HashMap::new(), &mut String::new()),
+            Err("Malformed expression")
+        );
+
+        assert_eq!(
             Molecule::new(vec![Atom::RightParen, Atom::LeftParen])
                 .run(&mut HashMap::new(), &mut String::new()),
             Err("Malformed expression")
+        );
+    }
+
+    #[test]
+    fn it_works_twice() {
+        let mut mol =  Molecule::new(vec![Atom::Data(2), Atom::Sum, Atom::Data(2)]);
+        mol.run(&mut HashMap::new(), &mut String::new());
+        assert_eq!(
+            mol.run(&mut HashMap::new(), &mut String::new()).unwrap(),
+            (4, String::new())
         );
     }
 }
