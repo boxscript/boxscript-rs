@@ -328,8 +328,7 @@ mod tests {
         );
 
         assert_eq!(
-            Molecule::new(vec![Atom::And])
-                .run(&mut HashMap::new(), &mut String::new()),
+            Molecule::new(vec![Atom::And]).run(&mut HashMap::new(), &mut String::new()),
             Err("Malformed expression")
         );
 
