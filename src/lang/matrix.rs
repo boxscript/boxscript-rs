@@ -41,10 +41,10 @@ pub fn neighboring(code: &str, loc: &[usize; 2]) -> HashMap<char, char> {
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn test_chars() {
-        use super::chars;
+    use super::*;
 
+    #[test]
+    fn it_turns_strings_to_chars() {
         assert_eq!(chars(&"ab\ncd"), vec![vec!['a', 'b'], vec!['c', 'd']]);
 
         assert_eq!(chars(&""), Vec::new() as Vec<Vec<char>>);
@@ -53,9 +53,7 @@ mod tests {
     }
 
     #[test]
-    fn test_neighboring() {
-        use super::neighboring;
-
+    fn it_finds_neighbors() {
         assert_eq!(
             neighboring(&"ab\ncd", &[0, 0]),
             [('N', '\0'), ('S', 'c'), ('W', '\0'), ('E', 'b')]

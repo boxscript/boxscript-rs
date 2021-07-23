@@ -27,6 +27,13 @@ pub enum Atom {
     Memory,
 }
 
+#[derive(Debug, PartialEq)]
+pub enum AtomType {
+    Number,
+    Binary,
+    Unary,
+}
+
 impl Atom {
     pub fn precedence(&self) -> u8 {
         match self {
@@ -43,13 +50,14 @@ impl Atom {
             _ => 0,
         }
     }
-}
 
-#[derive(Debug, PartialEq)]
-pub enum AtomType {
-    Number,
-    Binary,
-    Unary,
+    pub fn form(&self) -> AtomType {
+        match self {
+            Atom::Output | Atom::Memory | Atom::Not => AtomType::Unary,
+            Atom::Data(_) => AtomType::Number,
+            _ => AtomType::Binary,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -73,12 +81,8 @@ impl Molecule {
             let mut list: Vec<AtomType> = vec![];
             for child in children {
                 if let Atom::LeftParen | Atom::RightParen = child {
-                } else if let Atom::Output | Atom::Memory | Atom::Not = child {
-                    list.push(AtomType::Unary);
-                } else if let Atom::Data(_) = child {
-                    list.push(AtomType::Number);
                 } else {
-                    list.push(AtomType::Binary);
+                    list.push(Atom::form(child));
                 }
             }
 
@@ -260,303 +264,20 @@ impl Runnable for Molecule {
 #[allow(unused_must_use)]
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn test_atom_precedence() {
-        use super::Atom;
-
-        assert_eq!(Atom::Assign.precedence(), 1);
-
-        assert_eq!(Atom::LeftParen.precedence(), 0);
-
-        assert_eq!(Atom::Difference.precedence(), 7);
-    }
+    use super::*;
 
     #[test]
-    fn test_molecule_new() {
-        use super::{Atom, Molecule};
-
+    fn it_works_simple() {
         assert_eq!(
-            Molecule::new(vec![Atom::Data(1), Atom::Sum, Atom::Data(1),]),
-            Molecule {
-                children: vec![Atom::Data(1), Atom::Sum, Atom::Data(1),],
-                sorted_children: None,
-                valid: false,
-            }
+            Molecule::new(vec![Atom::Data(2), Atom::Sum, Atom::Data(2)])
+                .run(&mut HashMap::new(), &mut String::new())
+                .unwrap(),
+            (4, String::new())
         );
     }
 
     #[test]
-    fn test_molecule_sort() {
-        use super::{Atom, Molecule};
-
-        assert_eq!(
-            Molecule::sort(&[Atom::LeftParen], &mut None),
-            Err("Malformed expression")
-        );
-
-        assert_eq!(
-            Molecule::sort(
-                &[
-                    Atom::LeftParen,
-                    Atom::Data(3),
-                    Atom::Sum,
-                    Atom::Data(5),
-                    Atom::RightParen,
-                    Atom::Product,
-                    Atom::Data(7),
-                    Atom::RightParen,
-                ],
-                &mut None
-            ),
-            Err("Malformed expression")
-        );
-
-        assert_eq!(
-            Molecule::sort(
-                &[
-                    Atom::LeftParen,
-                    Atom::Data(3),
-                    Atom::Sum,
-                    Atom::Data(5),
-                    Atom::RightParen,
-                    Atom::Product,
-                    Atom::LeftParen,
-                    Atom::Data(2),
-                    Atom::Difference,
-                    Atom::Data(7),
-                    Atom::Quotient,
-                    Atom::Data(9),
-                    Atom::RightParen,
-                ],
-                &mut None
-            )
-            .unwrap(),
-            vec![
-                Atom::Data(3),
-                Atom::Data(5),
-                Atom::Sum,
-                Atom::Data(2),
-                Atom::Data(7),
-                Atom::Data(9),
-                Atom::Quotient,
-                Atom::Difference,
-                Atom::Product,
-            ]
-        );
-
-        assert_eq!(
-            Molecule::sort(
-                &[
-                    Atom::Data(1),
-                    Atom::Power,
-                    Atom::Data(2),
-                    Atom::Power,
-                    Atom::Data(3),
-                ],
-                &mut None
-            )
-            .unwrap(),
-            vec![
-                Atom::Data(1),
-                Atom::Data(2),
-                Atom::Data(3),
-                Atom::Power,
-                Atom::Power,
-            ]
-        );
-
-        assert_eq!(
-            Molecule::sort(
-                &vec![
-                    Atom::Data(0),
-                    Atom::LeftShift,
-                    Atom::Not,
-                    Atom::Data(1),
-                    Atom::Xor,
-                    Atom::Data(2),
-                    Atom::Or,
-                    Atom::Data(3),
-                    Atom::And,
-                    Atom::Data(4),
-                ],
-                &mut None
-            )
-            .unwrap(),
-            vec![
-                Atom::Data(0),
-                Atom::Data(1),
-                Atom::Not,
-                Atom::LeftShift,
-                Atom::Data(2),
-                Atom::Xor,
-                Atom::Data(3),
-                Atom::Data(4),
-                Atom::And,
-                Atom::Or,
-            ]
-        );
-
-        let mut molecule = Molecule::new(vec![
-            Atom::Data(2),
-            Atom::Equal,
-            Atom::Data(1),
-            Atom::Sum,
-            Atom::Data(1),
-        ]);
-        Molecule::sort(&molecule.children, &mut molecule.sorted_children);
-        assert_eq!(
-            Molecule::sort(&molecule.children, &mut molecule.sorted_children).unwrap(),
-            vec![
-                Atom::Data(2),
-                Atom::Data(1),
-                Atom::Data(1),
-                Atom::Sum,
-                Atom::Equal,
-            ]
-        );
-    }
-
-    #[test]
-    fn test_molecule_run() {
-        use super::{Atom, Molecule, Runnable};
-        use std::collections::HashMap;
-
-        assert_eq!(
-            Molecule::new(vec![
-                Atom::LeftParen,
-                Atom::Data(3),
-                Atom::Sum,
-                Atom::Data(5),
-                Atom::RightParen,
-                Atom::Product,
-                Atom::Data(7),
-            ])
-            .run(&mut HashMap::new(), &mut String::new()),
-            Ok((56, String::new()))
-        );
-
-        assert_eq!(
-            Molecule::new(vec![Atom::Output, Atom::Data(48),])
-                .run(&mut HashMap::new(), &mut String::new()),
-            Ok((48, "0".to_string()))
-        );
-
-        assert_eq!(
-            Molecule::new(vec![Atom::Output, Atom::Memory, Atom::Data(0),])
-                .run(&mut [(0, 48)].iter().cloned().collect(), &mut String::new()),
-            Ok((48, "0".to_string()))
-        );
-
-        assert_eq!(
-            Molecule::new(vec![Atom::Data(0), Atom::Sum, Atom::Sum, Atom::Data(0),])
-                .run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression")
-        );
-
-        assert_eq!(
-            Molecule::new(vec![
-                Atom::Not,
-                Atom::Memory,
-                Atom::Sum,
-                Atom::Data(0),
-                Atom::Data(1),
-            ])
-            .run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression")
-        );
-
-        assert_eq!(
-            Molecule::new(vec![Atom::Data(0), Atom::Data(1), Atom::Sum,])
-                .run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression")
-        );
-
-        assert_eq!(
-            Molecule::new(vec![
-                Atom::LeftParen,
-                Atom::Data(0),
-                Atom::RightParen,
-                Atom::LeftParen,
-                Atom::Data(1),
-                Atom::RightParen,
-            ])
-            .run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression")
-        );
-
-        let mut mem: HashMap<i128, i128> = [(1, 2)].iter().cloned().collect();
-        Molecule::new(vec![
-            Atom::Data(0),
-            Atom::Assign,
-            Atom::Data(1),
-            Atom::Assign,
-            Atom::Data(2),
-        ])
-        .run(&mut mem, &mut String::new());
-        assert_eq!(mem, [(0, 1), (1, 2)].iter().cloned().collect());
-
-        assert_eq!(
-            Molecule::new(vec![
-                Atom::LeftParen,
-                Atom::LeftParen,
-                Atom::Data(0),
-                Atom::Difference,
-                Atom::Data(1),
-                Atom::RightParen,
-                Atom::Power,
-                Atom::Data(2),
-                Atom::Sum,
-                Atom::Data(3),
-                Atom::RightParen,
-                Atom::Quotient,
-                Atom::Data(2),
-                Atom::Remainder,
-                Atom::Data(3),
-            ])
-            .run(&mut HashMap::new(), &mut String::new()),
-            Ok((2, String::new()))
-        );
-
-        assert_eq!(
-            Molecule::new(vec![
-                Atom::Data(1),
-                Atom::LeftShift,
-                Atom::Data(2),
-                Atom::Xor,
-                Atom::Data(3),
-                Atom::RightShift,
-                Atom::Data(4),
-                Atom::And,
-                Atom::Data(5),
-                Atom::Or,
-                Atom::Not,
-                Atom::Data(6),
-            ])
-            .run(&mut HashMap::new(), &mut String::new()),
-            Ok((-3, String::new()))
-        );
-
-        assert_eq!(
-            Molecule::new(vec![
-                Atom::Data(1),
-                Atom::Less,
-                Atom::Data(0),
-                Atom::Greater,
-                Atom::Data(3),
-                Atom::NotEqual,
-                Atom::Data(1),
-                Atom::Equal,
-                Atom::Data(1),
-            ])
-            .run(&mut HashMap::new(), &mut String::new()),
-            Ok((1, String::new()))
-        );
-
-        assert_eq!(
-            Molecule::new(vec![Atom::LeftParen,]).run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression")
-        );
-
+    fn it_detects_bad_chars() {
         assert_eq!(
             Molecule::new(vec![Atom::Output, Atom::Data(55296),])
                 .run(&mut HashMap::new(), &mut String::new()),

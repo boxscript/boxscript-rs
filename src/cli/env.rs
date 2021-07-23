@@ -23,10 +23,10 @@ fn read(args: Vec<String>) -> Result<String, String> {
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn test_read() {
-        use super::read;
+    use super::*;
 
+    #[test]
+    fn it_errors_on_bad_args() {
         assert_eq!(
             read(["a", "b"].iter().map(|s| String::from(*s)).collect()),
             Err(String::from(
@@ -38,7 +38,10 @@ mod tests {
             read([""].iter().map(|s| String::from(*s)).collect()),
             Err(String::from("\u{001b}[31mNo file exists at ``\u{001b}[0m",))
         );
+    }
 
+    #[test]
+    fn it_reads_a_file() {
         assert_eq!(
             read(
                 ["src/cli/mod.rs"]
