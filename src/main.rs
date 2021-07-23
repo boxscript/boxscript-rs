@@ -3,4 +3,5 @@
 mod cli;
 mod lang;
 
+#[cfg(not(tarpaulin_include))]
 fn main() {}

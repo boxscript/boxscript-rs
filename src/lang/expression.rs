@@ -363,12 +363,38 @@ mod tests {
     }
 
     #[test]
-    fn it_works_twice() {
-        let mut mol = Molecule::new(vec![Atom::Data(2), Atom::Sum, Atom::Data(2)]);
+    fn it_works_many_times() {
+        let mut mol = Molecule::new(vec![Atom::Data(2), Atom::Product, Atom::Data(2)]);
         mol.run(&mut HashMap::new(), &mut String::new());
         assert_eq!(
             mol.run(&mut HashMap::new(), &mut String::new()).unwrap(),
             (4, String::new())
+        );
+
+        assert_eq!(
+            mol.run(&mut HashMap::new(), &mut String::new()).unwrap(),
+            mol.run(&mut HashMap::new(), &mut String::new()).unwrap()
+        );
+    }
+
+    #[test]
+    fn it_outputs() {
+        assert_eq!(
+            Molecule::new(vec![Atom::Output, Atom::Data(48)])
+                .run(&mut HashMap::new(), &mut String::new())
+                .unwrap(),
+            (48, "0".to_string())
+        );
+    }
+
+    #[test]
+    fn it_works_with_memory() {
+        let mut mol = Molecule::new(vec![Atom::Output, Atom::Memory, Atom::Data(0)]);
+        let mut hm = HashMap::<i128, i128>::new();
+        hm.insert(0, 48);
+        assert_eq!(
+            mol.run(&mut hm, &mut String::new()).unwrap(),
+            (48, "0".to_string())
         );
     }
 }
