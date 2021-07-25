@@ -153,15 +153,14 @@ impl Parser<Atom> for Molecule {
             } else if NUMBER.is_match(&expr_copy) {
                 let number = NUMBER.find(&expr_copy).unwrap().as_str();
 
-                if number.len() == 1 {
+                if number.chars().count() == 1 {
                     children.push(Atom::Data(0));
                 } else {
                     let digits: String = number
                         .chars()
                         .map(|c| match c {
-                            '▄' => '0',
                             '▀' => '1',
-                            _ => '_',
+                            _ => '0',
                         })
                         .collect();
                     let val = i128::from_str_radix(&digits[1..], 2).unwrap();
@@ -503,6 +502,29 @@ mod tests {
     }
 
     #[test]
+    fn it_works_with_memory_with_parsing() {
+        let mut hm = HashMap::<i128, i128>::new();
+        hm.insert(0, 48);
+        assert_eq!(
+            Molecule::new(Molecule::parse("▭◇▀").unwrap())
+                .run(&mut hm, &mut String::new())
+                .unwrap(),
+            (48, "0".to_string())
+        );
+        Molecule::new(Molecule::parse("▀◈▀▀▀▄▀").unwrap()).run(&mut hm, &mut String::new());
+        assert_eq!(hm, [(0, 13)].iter().cloned().collect());
+        assert_eq!(
+            Molecule::new(Molecule::parse("◇▀▀▀▄▀").unwrap())
+                .run(&mut HashMap::new(), &mut String::new())
+                .unwrap(),
+            (0, String::new())
+        );
+        hm.insert(0, 48);
+        Molecule::new(Molecule::parse("▀▀▄▐▀▀◈▀▀◈▀◈▀▀").unwrap()).run(&mut hm, &mut String::new());
+        assert_eq!(hm, [(0, 1), (1, 1), (3, 1)].iter().cloned().collect());
+    }
+
+    #[test]
     fn it_works_complex() {
         assert_eq!(
             Molecule::new(vec![
@@ -531,6 +553,57 @@ mod tests {
                 Atom::Power,
                 Atom::Data(11),
             ])
+            .run(&mut HashMap::new(), &mut String::new())
+            .unwrap(),
+            (-9, String::new())
+        );
+
+        assert_eq!(
+            Molecule::new(vec![
+                Atom::Data(0),
+                Atom::Less,
+                Atom::Data(1),
+                Atom::Greater,
+                Atom::Data(2),
+                Atom::Equal,
+                Atom::Data(0),
+                Atom::NotEqual,
+                Atom::Data(-1),
+            ])
+            .run(&mut HashMap::new(), &mut String::new())
+            .unwrap(),
+            (1, String::new())
+        );
+
+        assert_eq!(
+            Molecule::new(vec![
+                Atom::LeftParen,
+                Atom::LeftParen,
+                Atom::Data(0),
+                Atom::Sum,
+                Atom::Data(2),
+                Atom::RightParen,
+                Atom::Power,
+                Atom::Data(2),
+                Atom::Power,
+                Atom::Data(2),
+                Atom::Difference,
+                Atom::Data(8),
+                Atom::RightParen,
+            ])
+            .run(&mut HashMap::new(), &mut String::new())
+            .unwrap(),
+            (8, String::new())
+        );
+    }
+
+    #[test]
+    fn it_works_complex_with_parsing() {
+        assert_eq!(
+            Molecule::new(
+                Molecule::parse("▔▄▐▀▀▌▀▀▄▘▀▀▀▝▀▀▄▄▗▀▀▄▀▚▀▀▀▄▞▀▀▀▀▒▀▀▄▄▄▓▀▀▄▄▀░▀▀▄▀▄▖▀▀▄▀▀ ")
+                    .unwrap()
+            )
             .run(&mut HashMap::new(), &mut String::new())
             .unwrap(),
             (-9, String::new())
