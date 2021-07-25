@@ -2,6 +2,7 @@
 
 use std::fs;
 
+extern crate ansi_term;
 #[macro_use]
 extern crate clap;
 #[macro_use]
@@ -27,8 +28,10 @@ fn main() {
         let content = fs::read_to_string(filename);
 
         if content.is_err() {
+            use ansi_term::Colour::Red;
             eprintln!(
-                "\u{001b}[31;1merror:\u{001b}[0m {}: No such file or directory",
+                "{} {}: No such file or directory",
+                Red.bold().paint("error:"),
                 file.unwrap()
             );
         }
