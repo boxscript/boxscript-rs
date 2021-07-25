@@ -347,7 +347,7 @@ mod tests {
     }
 
     #[test]
-    fn it_detects_bad_chars() {
+    fn it_detects_bad_outputs() {
         assert_eq!(
             Molecule::new(vec![Atom::Output, Atom::Data(55296),])
                 .run(&mut HashMap::new(), &mut String::new()),
@@ -439,6 +439,11 @@ mod tests {
             Molecule::new(vec![Atom::RightParen]).run(&mut HashMap::new(), &mut String::new()),
             Err("Malformed expression")
         );
+    }
+
+    #[test]
+    fn it_detects_bad_chars() {
+        assert_eq!(Molecule::parse("a"), Err("Malformed expression"));
     }
 
     #[test]
