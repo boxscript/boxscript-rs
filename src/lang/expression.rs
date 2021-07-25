@@ -1,4 +1,5 @@
-use super::interpreter::Runnable;
+use super::interpreter::*;
+use regex::Regex;
 use std::collections::HashMap;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -76,59 +77,6 @@ impl Molecule {
         }
     }
 
-    pub fn validate<'a>(children: &'a [Atom], valid: &mut bool) -> Result<(), &'a str> {
-        if !*valid {
-            let mut list: Vec<AtomType> = vec![];
-            for child in children {
-                if let Atom::LeftParen | Atom::RightParen = child {
-                } else {
-                    list.push(Atom::form(child));
-                }
-            }
-
-            if list.len() == 1 && list[0] != AtomType::Number
-                || list.len() == 2 && (list[0] != AtomType::Unary || list[1] != AtomType::Number)
-            {
-                return Err("Malformed expression");
-            }
-            *valid = true;
-
-            if list.is_empty() {
-                return Ok(());
-            }
-
-            for i in 0..list.len() {
-                if i == 0 {
-                    *valid &= list[i] == AtomType::Number && list[i + 1] == AtomType::Binary
-                        || list[i] == AtomType::Unary && list[i + 1] != AtomType::Binary;
-                } else if i == list.len() - 1 {
-                    *valid &= (list[i - 1] == AtomType::Binary || list[i - 1] == AtomType::Unary)
-                        && list[i] == AtomType::Number;
-                } else {
-                    *valid &= match list[i] {
-                        AtomType::Number => {
-                            list[i - 1] != AtomType::Number && list[i + 1] != AtomType::Number
-                        }
-                        AtomType::Unary => {
-                            list[i - 1] != AtomType::Number && list[i + 1] != AtomType::Binary
-                        }
-                        AtomType::Binary => {
-                            list[i - 1] == AtomType::Number && list[i + 1] != AtomType::Binary
-                        }
-                    };
-                }
-            }
-
-            if !*valid {
-                return Err("Malformed expression");
-            }
-
-            Ok(())
-        } else {
-            Ok(())
-        }
-    }
-
     pub fn sort<'a>(
         children: &'a [Atom],
         sorted: &'a mut Option<Vec<Atom>>,
@@ -185,6 +133,131 @@ impl Molecule {
         }
 
         Ok(sorted.as_ref().unwrap().to_vec())
+    }
+}
+
+impl Parser<Atom> for Molecule {
+    fn parse(expr: &str) -> Result<Vec<Atom>, &str> {
+        lazy_static! {
+            static ref NUMBER: Regex = Regex::new(r"^[▄▀]+").unwrap();
+            static ref WHITESPACE: Regex = Regex::new(r"^[\s]+").unwrap();
+            static ref OTHER: Regex = Regex::new(r"^.").unwrap();
+        }
+
+        let mut expr_copy = expr.to_string();
+        let mut children: Vec<Atom> = Vec::new();
+
+        while !expr_copy.is_empty() {
+            if WHITESPACE.is_match(&expr_copy) {
+                expr_copy = WHITESPACE.replace_all(&expr_copy, "").to_string();
+            } else if NUMBER.is_match(&expr_copy) {
+                let number = NUMBER.find(&expr_copy).unwrap().as_str();
+
+                if number.chars().count() == 1 {
+                    children.push(Atom::Data(0));
+                } else {
+                    let digits: String = number
+                        .chars()
+                        .map(|c| match c {
+                            '▀' => '1',
+                            _ => '0',
+                        })
+                        .collect();
+                    let val = i128::from_str_radix(&digits[1..], 2).unwrap();
+                    if number.starts_with('▄') {
+                        children.push(Atom::Data(-val));
+                    } else {
+                        children.push(Atom::Data(val));
+                    }
+                }
+
+                expr_copy = NUMBER.replace_all(&expr_copy, "").to_string();
+            } else {
+                children.push(match expr_copy.chars().next().unwrap() {
+                    '▕' => Atom::LeftParen,
+                    '▏' => Atom::RightParen,
+                    '▔' => Atom::Not,
+                    '▖' => Atom::Power,
+                    '▗' => Atom::Remainder,
+                    '▘' => Atom::Product,
+                    '▝' => Atom::Quotient,
+                    '▚' => Atom::LeftShift,
+                    '▞' => Atom::RightShift,
+                    '▐' => Atom::Sum,
+                    '▌' => Atom::Difference,
+                    '▨' => Atom::Less,
+                    '▧' => Atom::Greater,
+                    '▤' => Atom::Equal,
+                    '▥' => Atom::NotEqual,
+                    '░' => Atom::And,
+                    '▒' => Atom::Xor,
+                    '▓' => Atom::Or,
+                    '◇' => Atom::Memory,
+                    '◈' => Atom::Assign,
+                    '▭' => Atom::Output,
+                    _ => return Err("Malformed expression"),
+                });
+
+                expr_copy = OTHER.replace_all(&expr_copy, "").to_string();
+            }
+        }
+
+        Ok(children)
+    }
+}
+
+impl Validator<Atom> for Molecule {
+    fn validate<'a>(children: &'a [Atom], valid: &mut bool) -> Result<(), &'a str> {
+        if !*valid {
+            let mut list: Vec<AtomType> = vec![];
+            for child in children {
+                if let Atom::LeftParen | Atom::RightParen = *child {
+                } else {
+                    list.push(Atom::form(child));
+                }
+            }
+
+            if list.len() == 1 && list[0] != AtomType::Number
+                || list.len() == 2 && (list[0] != AtomType::Unary || list[1] != AtomType::Number)
+            {
+                return Err("Malformed expression");
+            }
+            *valid = true;
+
+            if list.is_empty() {
+                return Ok(());
+            }
+
+            for i in 0..list.len() {
+                if i == 0 {
+                    *valid &= list[i] == AtomType::Number && list[i + 1] == AtomType::Binary
+                        || list[i] == AtomType::Unary && list[i + 1] != AtomType::Binary;
+                } else if i == list.len() - 1 {
+                    *valid &= (list[i - 1] == AtomType::Binary || list[i - 1] == AtomType::Unary)
+                        && list[i] == AtomType::Number;
+                } else {
+                    *valid &= match list[i] {
+                        AtomType::Number => {
+                            list[i - 1] != AtomType::Number && list[i + 1] != AtomType::Number
+                        }
+                        AtomType::Unary => {
+                            list[i - 1] != AtomType::Number && list[i + 1] != AtomType::Binary
+                        }
+                        AtomType::Binary => {
+                            list[i - 1] == AtomType::Number && list[i + 1] != AtomType::Binary
+                        }
+                    };
+                }
+            }
+
+            if !*valid {
+                return Err("Malformed expression");
+            }
+
+            Ok(())
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -429,6 +502,29 @@ mod tests {
     }
 
     #[test]
+    fn it_works_with_memory_with_parsing() {
+        let mut hm = HashMap::<i128, i128>::new();
+        hm.insert(0, 48);
+        assert_eq!(
+            Molecule::new(Molecule::parse("▭◇▀").unwrap())
+                .run(&mut hm, &mut String::new())
+                .unwrap(),
+            (48, "0".to_string())
+        );
+        Molecule::new(Molecule::parse("▀◈▀▀▀▄▀").unwrap()).run(&mut hm, &mut String::new());
+        assert_eq!(hm, [(0, 13)].iter().cloned().collect());
+        assert_eq!(
+            Molecule::new(Molecule::parse("◇▀▀▀▄▀").unwrap())
+                .run(&mut HashMap::new(), &mut String::new())
+                .unwrap(),
+            (0, String::new())
+        );
+        hm.insert(0, 48);
+        Molecule::new(Molecule::parse("▀▀▄▐▀▀◈▀▀◈▀◈▀▀").unwrap()).run(&mut hm, &mut String::new());
+        assert_eq!(hm, [(0, 1), (1, 1), (3, 1)].iter().cloned().collect());
+    }
+
+    #[test]
     fn it_works_complex() {
         assert_eq!(
             Molecule::new(vec![
@@ -497,6 +593,33 @@ mod tests {
             ])
             .run(&mut HashMap::new(), &mut String::new())
             .unwrap(),
+            (8, String::new())
+        );
+    }
+
+    #[test]
+    fn it_works_complex_with_parsing() {
+        assert_eq!(
+            Molecule::new(
+                Molecule::parse("▔▄▐▀▀▌▀▀▄▘▀▀▀▝▀▀▄▄▗▀▀▄▀▚▀▀▀▄▞▀▀▀▀▒▀▀▄▄▄▓▀▀▄▄▀░▀▀▄▀▄▖▀▀▄▀▀ ")
+                    .unwrap()
+            )
+            .run(&mut HashMap::new(), &mut String::new())
+            .unwrap(),
+            (-9, String::new())
+        );
+
+        assert_eq!(
+            Molecule::new(Molecule::parse("▀▄▨▀▀▧▀▀▄▤▀▄▥▄▀").unwrap())
+                .run(&mut HashMap::new(), &mut String::new())
+                .unwrap(),
+            (1, String::new())
+        );
+
+        assert_eq!(
+            Molecule::new(Molecule::parse("▕▕▀▄▐▀▀▄▏▖▀▀▄▖▀▀▄▌▀▀▄▄▄▏").unwrap())
+                .run(&mut HashMap::new(), &mut String::new())
+                .unwrap(),
             (8, String::new())
         );
     }

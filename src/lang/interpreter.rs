@@ -7,3 +7,11 @@ pub trait Runnable {
         stdout: &mut String,
     ) -> Result<(i128, String), &str>;
 }
+
+pub trait Parser<T> {
+    fn parse(expr: &str) -> Result<Vec<T>, &str>;
+}
+
+pub trait Validator<T> {
+    fn validate<'a>(children: &'a [T], valid: &mut bool) -> Result<(), &'a str>;
+}
