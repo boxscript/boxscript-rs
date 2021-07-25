@@ -8,7 +8,7 @@ pub fn chars(code: &str) -> Vec<Vec<char>> {
     } else {
         code.lines()
             .map(|line| {
-                format!("{1:\u{0}<0$}", length.unwrap(), line)
+                format!("{1:\0<0$}", length.unwrap(), line)
                     .chars()
                     .collect()
             })
