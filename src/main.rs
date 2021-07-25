@@ -3,6 +3,10 @@
 use std::env;
 use std::process;
 
+#[macro_use]
+extern crate lazy_static;
+extern crate regex;
+
 mod cli;
 mod lang;
 
