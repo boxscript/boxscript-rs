@@ -1,23 +1,36 @@
 #![allow(dead_code)]
 
-use std::env;
-use std::process;
+use std::fs;
 
+#[macro_use]
+extern crate clap;
 #[macro_use]
 extern crate lazy_static;
 extern crate regex;
 
-mod cli;
 mod lang;
 
 #[cfg(not(tarpaulin_include))]
 fn main() {
-    let args: Vec<String> = env::args().collect();
+    let app = clap_app!(BoxScript =>
+        (version: "0.1.0")
+        (author: "pyxiis <47072520+pyxiis@users.noreply.github.com>")
+        (about: "Runs BoxScript code from a file")
+        (@arg file: +required "Sets the input file to use")
+    );
 
-    let file = cli::env::read(args[1..].to_vec());
+    let matches = app.get_matches();
 
-    if file.is_err() {
-        println!("{}", file.err().unwrap());
-        process::exit(1);
+    let file = matches.value_of("file");
+
+    if let Some(filename) = file {
+        let content = fs::read_to_string(filename);
+
+        if content.is_err() {
+            eprintln!(
+                "\u{001b}[31;1merror:\u{001b}[0m {}: No such file or directory",
+                file.unwrap()
+            );
+        }
     }
 }

@@ -8,5 +8,6 @@ repository = "https://github.com/boxscript/boxscript-rs"
 publish = false
 
 [dependencies]
+clap = "2.33.3"
 lazy_static = "1.4.0"
 regex = "1.5.4"
