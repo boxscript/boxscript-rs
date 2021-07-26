@@ -77,10 +77,7 @@ impl Molecule {
         }
     }
 
-    pub fn sort<'a>(
-        children: &'a [Atom],
-        sorted: &'a mut Option<Vec<Atom>>,
-    ) -> Result<Vec<Atom>, &'a str> {
+    pub fn sort(children: &[Atom], sorted: &mut Option<Vec<Atom>>) -> Result<Vec<Atom>, String> {
         if sorted.is_none() {
             let mut output: Vec<Atom> = Vec::new();
             let mut stack: Vec<Atom> = Vec::new();
@@ -96,7 +93,7 @@ impl Molecule {
                     }
 
                     if stack.is_empty() || stack.last().cloned().unwrap() != Atom::LeftParen {
-                        return Err("Malformed expression");
+                        return Err("Malformed expression".to_string());
                     }
 
                     stack.pop();
@@ -123,7 +120,7 @@ impl Molecule {
 
             while !stack.is_empty() {
                 if let Atom::LeftParen = stack.last().cloned().unwrap() {
-                    return Err("Malformed expression");
+                    return Err("Malformed expression".to_string());
                 }
 
                 output.push(stack.pop().unwrap());
@@ -137,7 +134,7 @@ impl Molecule {
 }
 
 impl Parser<Atom> for Molecule {
-    fn parse(expr: &str) -> Result<Vec<Atom>, &str> {
+    fn parse(expr: &str) -> Result<Vec<Atom>, String> {
         lazy_static! {
             static ref NUMBER: Regex = Regex::new(r"^[▄▀]+").unwrap();
             static ref WHITESPACE: Regex = Regex::new(r"^[\s]+").unwrap();
@@ -195,7 +192,7 @@ impl Parser<Atom> for Molecule {
                     '◇' => Atom::Memory,
                     '◈' => Atom::Assign,
                     '▭' => Atom::Output,
-                    _ => return Err("Malformed expression"),
+                    _ => return Err("Malformed expression".to_string()),
                 });
 
                 expr_copy = OTHER.replace_all(&expr_copy, "").to_string();
@@ -207,7 +204,7 @@ impl Parser<Atom> for Molecule {
 }
 
 impl Validator<Atom> for Molecule {
-    fn validate<'a>(children: &'a [Atom], valid: &mut bool) -> Result<(), &'a str> {
+    fn validate(children: &[Atom], valid: &mut bool) -> Result<(), String> {
         if !*valid {
             let mut list: Vec<AtomType> = vec![];
             for child in children {
@@ -220,7 +217,7 @@ impl Validator<Atom> for Molecule {
             if list.len() == 1 && list[0] != AtomType::Number
                 || list.len() == 2 && (list[0] != AtomType::Unary || list[1] != AtomType::Number)
             {
-                return Err("Malformed expression");
+                return Err("Malformed expression".to_string());
             }
             *valid = true;
 
@@ -251,7 +248,7 @@ impl Validator<Atom> for Molecule {
             }
 
             if !*valid {
-                return Err("Malformed expression");
+                return Err("Malformed expression".to_string());
             }
 
             Ok(())
@@ -266,16 +263,17 @@ impl Runnable for Molecule {
         &mut self,
         memory: &mut HashMap<i128, i128>,
         stdout: &mut String,
-    ) -> Result<(i128, String), &str> {
+    ) -> Result<(i128, String), String> {
         let validity = Molecule::validate(&self.children, &mut self.valid);
 
-        if validity.is_err() {
-            return Err(validity.err().unwrap());
+        if let Err(msg) = validity {
+            return Err(msg);
         }
+
         let children = Molecule::sort(&self.children, &mut self.sorted_children);
 
-        if children.is_err() {
-            return Err(children.err().unwrap());
+        if let Err(msg) = children {
+            return Err(msg);
         }
 
         let mut stack: Vec<i128> = vec![];
@@ -360,71 +358,71 @@ mod tests {
         assert_eq!(
             Molecule::new(vec![Atom::Data(0), Atom::Data(0)])
                 .run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression")
+            Err("Malformed expression".to_string())
         );
 
         assert_eq!(
             Molecule::new(vec![Atom::Product, Atom::Data(0)])
                 .run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression")
+            Err("Malformed expression".to_string())
         );
 
         assert_eq!(
             Molecule::new(vec![Atom::Difference, Atom::Not])
                 .run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression")
+            Err("Malformed expression".to_string())
         );
 
         assert_eq!(
             Molecule::new(vec![Atom::Output, Atom::Memory])
                 .run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression")
+            Err("Malformed expression".to_string())
         );
 
         assert_eq!(
             Molecule::new(vec![Atom::Not, Atom::Remainder])
                 .run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression")
+            Err("Malformed expression".to_string())
         );
 
         assert_eq!(
             Molecule::new(vec![Atom::Data(0), Atom::Xor])
                 .run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression")
+            Err("Malformed expression".to_string())
         );
 
         assert_eq!(
             Molecule::new(vec![Atom::And]).run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression")
+            Err("Malformed expression".to_string())
         );
 
         assert_eq!(
             Molecule::new(vec![Atom::Data(0), Atom::And, Atom::Quotient])
                 .run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression")
+            Err("Malformed expression".to_string())
         );
 
         assert_eq!(
             Molecule::new(vec![Atom::And, Atom::LeftShift, Atom::Data(0)])
                 .run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression")
+            Err("Malformed expression".to_string())
         );
 
         assert_eq!(
             Molecule::new(vec![Atom::And, Atom::Not, Atom::Data(0)])
                 .run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression")
+            Err("Malformed expression".to_string())
         );
         assert_eq!(
             Molecule::new(vec![Atom::And, Atom::Data(0), Atom::Greater])
                 .run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression")
+            Err("Malformed expression".to_string())
         );
 
         assert_eq!(
             Molecule::new(vec![Atom::RightParen, Atom::LeftParen])
                 .run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression")
+            Err("Malformed expression".to_string())
         );
     }
 
@@ -432,18 +430,21 @@ mod tests {
     fn it_detects_bad_parentheses() {
         assert_eq!(
             Molecule::new(vec![Atom::LeftParen]).run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression")
+            Err("Malformed expression".to_string())
         );
 
         assert_eq!(
             Molecule::new(vec![Atom::RightParen]).run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression")
+            Err("Malformed expression".to_string())
         );
     }
 
     #[test]
     fn it_detects_bad_chars() {
-        assert_eq!(Molecule::parse("a"), Err("Malformed expression"));
+        assert_eq!(
+            Molecule::parse("a"),
+            Err("Malformed expression".to_string())
+        );
     }
 
     #[test]
