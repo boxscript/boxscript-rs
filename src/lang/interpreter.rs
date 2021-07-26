@@ -5,13 +5,13 @@ pub trait Runnable {
         &mut self,
         memory: &mut HashMap<i128, i128>,
         stdout: &mut String,
-    ) -> Result<(i128, String), &str>;
+    ) -> Result<(i128, String), String>;
 }
 
 pub trait Parser<T> {
-    fn parse(expr: &str) -> Result<Vec<T>, &str>;
+    fn parse(expr: &str) -> Result<Vec<T>, String>;
 }
 
 pub trait Validator<T> {
-    fn validate<'a>(children: &'a [T], valid: &mut bool) -> Result<(), &'a str>;
+    fn validate(children: &[T], valid: &mut bool) -> Result<(), String>;
 }
