@@ -271,20 +271,12 @@ impl Runnable for Molecule {
         memory: &mut HashMap<i128, i128>,
         stdout: &mut String,
     ) -> Result<(i128, String), String> {
-        let validity = Molecule::validate(&self.children, &mut self.valid);
+        Molecule::validate(&self.children, &mut self.valid)?;
 
-        if let Err(msg) = validity {
-            return Err(msg);
-        }
-
-        let children = Molecule::sort(&self.children, &mut self.sorted_children);
-
-        if let Err(msg) = children {
-            return Err(msg);
-        }
+        let children = Molecule::sort(&self.children, &mut self.sorted_children)?;
 
         let mut stack: Vec<i128> = vec![];
-        for child in children.unwrap() {
+        for child in children {
             if let Atom::Data(num) = child {
                 stack.push(num);
             } else if let Atom::Memory | Atom::Not | Atom::Output = child {
@@ -420,6 +412,7 @@ mod tests {
                 .run(&mut HashMap::new(), &mut String::new()),
             Err("Malformed expression".to_string())
         );
+
         assert_eq!(
             Molecule::new(vec![Atom::And, Atom::Data(0), Atom::Greater])
                 .run(&mut HashMap::new(), &mut String::new()),
