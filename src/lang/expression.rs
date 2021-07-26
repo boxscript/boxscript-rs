@@ -92,7 +92,7 @@ impl Molecule {
                         output.push(stack.pop().unwrap());
                     }
 
-                    if stack.is_empty() || stack.last().cloned().unwrap() != Atom::LeftParen {
+                    if stack.is_empty() {
                         return Err("Malformed expression".to_string());
                     }
 
