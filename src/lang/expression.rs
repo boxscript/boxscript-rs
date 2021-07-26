@@ -93,7 +93,7 @@ impl Molecule {
                     }
 
                     if stack.is_empty() {
-                        return Err("Malformed expression".to_string());
+                        return Err("Missing left parenthesis".to_string());
                     }
 
                     stack.pop();
@@ -120,7 +120,7 @@ impl Molecule {
 
             while !stack.is_empty() {
                 if let Atom::LeftParen = stack.last().cloned().unwrap() {
-                    return Err("Malformed expression".to_string());
+                    return Err("Missing right parenthesis".to_string());
                 }
 
                 output.push(stack.pop().unwrap());
@@ -192,7 +192,7 @@ impl Parser<Atom> for Molecule {
                     '◇' => Atom::Memory,
                     '◈' => Atom::Assign,
                     '▭' => Atom::Output,
-                    _ => return Err("Malformed expression".to_string()),
+                    _ => return Err("Invalid character".to_string()),
                 });
 
                 expr_copy = OTHER.replace_all(&expr_copy, "").to_string();
@@ -425,33 +425,30 @@ mod tests {
                 .run(&mut HashMap::new(), &mut String::new()),
             Err("Malformed expression".to_string())
         );
-
-        assert_eq!(
-            Molecule::new(vec![Atom::RightParen, Atom::LeftParen])
-                .run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression".to_string())
-        );
     }
 
     #[test]
     fn it_detects_bad_parentheses() {
         assert_eq!(
             Molecule::new(vec![Atom::LeftParen]).run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression".to_string())
+            Err("Missing right parenthesis".to_string())
         );
 
         assert_eq!(
             Molecule::new(vec![Atom::RightParen]).run(&mut HashMap::new(), &mut String::new()),
-            Err("Malformed expression".to_string())
+            Err("Missing left parenthesis".to_string())
+        );
+
+        assert_eq!(
+            Molecule::new(vec![Atom::RightParen, Atom::LeftParen])
+                .run(&mut HashMap::new(), &mut String::new()),
+            Err("Missing left parenthesis".to_string())
         );
     }
 
     #[test]
     fn it_detects_bad_chars() {
-        assert_eq!(
-            Molecule::parse("a"),
-            Err("Malformed expression".to_string())
-        );
+        assert_eq!(Molecule::parse("a"), Err("Invalid character".to_string()));
     }
 
     #[test]
