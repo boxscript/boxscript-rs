@@ -206,42 +206,49 @@ impl Parser<Atom> for Molecule {
 impl Validator<Atom> for Molecule {
     fn validate(children: &[Atom], valid: &mut bool) -> Result<(), String> {
         if !*valid {
-            let mut list: Vec<AtomType> = vec![];
+            let mut token_types: Vec<AtomType> = vec![];
             for child in children {
                 if let Atom::LeftParen | Atom::RightParen = *child {
                 } else {
-                    list.push(Atom::form(child));
+                    token_types.push(Atom::form(child));
                 }
             }
 
-            if list.len() == 1 && list[0] != AtomType::Number
-                || list.len() == 2 && (list[0] != AtomType::Unary || list[1] != AtomType::Number)
+            if token_types.len() == 1 && token_types[0] != AtomType::Number
+                || token_types.len() == 2
+                    && (token_types[0] != AtomType::Unary || token_types[1] != AtomType::Number)
             {
                 return Err("Malformed expression".to_string());
             }
             *valid = true;
 
-            if list.is_empty() {
+            if token_types.is_empty() {
                 return Ok(());
             }
 
-            for i in 0..list.len() {
+            for i in 0..token_types.len() {
                 if i == 0 {
-                    *valid &= list[i] == AtomType::Number && list[i + 1] == AtomType::Binary
-                        || list[i] == AtomType::Unary && list[i + 1] != AtomType::Binary;
-                } else if i == list.len() - 1 {
-                    *valid &= (list[i - 1] == AtomType::Binary || list[i - 1] == AtomType::Unary)
-                        && list[i] == AtomType::Number;
+                    *valid &= token_types[i] == AtomType::Number
+                        && token_types[i + 1] == AtomType::Binary
+                        || token_types[i] == AtomType::Unary
+                            && token_types[i + 1] != AtomType::Binary;
+                } else if i == token_types.len() - 1 {
+                    *valid &= (token_types[i - 1] == AtomType::Binary
+                        || token_types[i - 1] == AtomType::Unary)
+                        && token_types[i] == AtomType::Number;
                 } else {
-                    *valid &= match list[i] {
+                    *valid &= match token_types[i] {
                         AtomType::Number => {
-                            list[i - 1] != AtomType::Number && list[i + 1] != AtomType::Number
+                            token_types[i - 1] != AtomType::Number
+                                && token_types[i + 1] != AtomType::Number
                         }
                         AtomType::Unary => {
-                            list[i - 1] != AtomType::Number && list[i + 1] != AtomType::Binary
+                            token_types[i - 1] != AtomType::Number
+                                && token_types[i + 1] != AtomType::Binary
                         }
                         AtomType::Binary => {
-                            list[i - 1] == AtomType::Number && list[i + 1] != AtomType::Binary
+                            token_types[i - 1] == AtomType::Number
+                                && token_types[i + 1] != AtomType::Binary
                         }
                     };
                 }
