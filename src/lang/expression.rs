@@ -92,8 +92,8 @@ impl Molecule {
                         output.push(stack.pop().unwrap());
                     }
 
-                    if stack.is_empty() {
-                        return Err("Malformed expression".to_string());
+                    if stack.is_empty() || stack.last().cloned().unwrap() != Atom::LeftParen {
+                        return Err("Missing Left Parenthesis".to_string());
                     }
 
                     stack.pop();
@@ -120,7 +120,7 @@ impl Molecule {
 
             while !stack.is_empty() {
                 if let Atom::LeftParen = stack.last().cloned().unwrap() {
-                    return Err("Malformed expression".to_string());
+                    return Err("Missing Right Parenthesis".to_string());
                 }
 
                 output.push(stack.pop().unwrap());
@@ -192,7 +192,7 @@ impl Parser<Atom> for Molecule {
                     '◇' => Atom::Memory,
                     '◈' => Atom::Assign,
                     '▭' => Atom::Output,
-                    _ => return Err("Malformed expression".to_string()),
+                    _ => return Err("Invalid Character".to_string()),
                 });
 
                 expr_copy = OTHER.replace_all(&expr_copy, "").to_string();
@@ -206,49 +206,42 @@ impl Parser<Atom> for Molecule {
 impl Validator<Atom> for Molecule {
     fn validate(children: &[Atom], valid: &mut bool) -> Result<(), String> {
         if !*valid {
-            let mut token_types: Vec<AtomType> = vec![];
+            let mut list: Vec<AtomType> = vec![];
             for child in children {
                 if let Atom::LeftParen | Atom::RightParen = *child {
                 } else {
-                    token_types.push(Atom::form(child));
+                    list.push(Atom::form(child));
                 }
             }
 
-            if token_types.len() == 1 && token_types[0] != AtomType::Number
-                || token_types.len() == 2
-                    && (token_types[0] != AtomType::Unary || token_types[1] != AtomType::Number)
+            if list.len() == 1 && list[0] != AtomType::Number
+                || list.len() == 2 && (list[0] != AtomType::Unary || list[1] != AtomType::Number)
             {
                 return Err("Malformed expression".to_string());
             }
             *valid = true;
 
-            if token_types.is_empty() {
+            if list.is_empty() {
                 return Ok(());
             }
 
-            for i in 0..token_types.len() {
+            for i in 0..list.len() {
                 if i == 0 {
-                    *valid &= token_types[i] == AtomType::Number
-                        && token_types[i + 1] == AtomType::Binary
-                        || token_types[i] == AtomType::Unary
-                            && token_types[i + 1] != AtomType::Binary;
-                } else if i == token_types.len() - 1 {
-                    *valid &= (token_types[i - 1] == AtomType::Binary
-                        || token_types[i - 1] == AtomType::Unary)
-                        && token_types[i] == AtomType::Number;
+                    *valid &= list[i] == AtomType::Number && list[i + 1] == AtomType::Binary
+                        || list[i] == AtomType::Unary && list[i + 1] != AtomType::Binary;
+                } else if i == list.len() - 1 {
+                    *valid &= (list[i - 1] == AtomType::Binary || list[i - 1] == AtomType::Unary)
+                        && list[i] == AtomType::Number;
                 } else {
-                    *valid &= match token_types[i] {
+                    *valid &= match list[i] {
                         AtomType::Number => {
-                            token_types[i - 1] != AtomType::Number
-                                && token_types[i + 1] != AtomType::Number
+                            list[i - 1] != AtomType::Number && list[i + 1] != AtomType::Number
                         }
                         AtomType::Unary => {
-                            token_types[i - 1] != AtomType::Number
-                                && token_types[i + 1] != AtomType::Binary
+                            list[i - 1] != AtomType::Number && list[i + 1] != AtomType::Binary
                         }
                         AtomType::Binary => {
-                            token_types[i - 1] == AtomType::Number
-                                && token_types[i + 1] != AtomType::Binary
+                            list[i - 1] == AtomType::Number && list[i + 1] != AtomType::Binary
                         }
                     };
                 }
