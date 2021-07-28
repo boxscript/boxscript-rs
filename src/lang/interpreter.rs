@@ -1,11 +1,9 @@
-use std::collections::HashMap;
-
-pub trait Runnable {
+pub trait Runnable<T> {
     fn run(
         &mut self,
-        memory: &mut HashMap<i128, i128>,
+        memory: &mut std::collections::HashMap<T, T>,
         stdout: &mut String,
-    ) -> Result<(i128, String), String>;
+    ) -> Result<(T, String), String>;
 }
 
 pub trait Parser<T> {

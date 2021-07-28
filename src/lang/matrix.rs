@@ -45,17 +45,17 @@ mod tests {
 
     #[test]
     fn it_turns_strings_to_chars() {
-        assert_eq!(chars(&"ab\ncd"), vec![vec!['a', 'b'], vec!['c', 'd']]);
+        assert_eq!(chars("ab\ncd"), vec![vec!['a', 'b'], vec!['c', 'd']]);
 
-        assert_eq!(chars(&""), Vec::new() as Vec<Vec<char>>);
+        assert_eq!(chars(""), Vec::new() as Vec<Vec<char>>);
 
-        assert_eq!(chars(&"ab\nc"), vec![vec!['a', 'b'], vec!['c', '\0']]);
+        assert_eq!(chars("ab\nc"), vec![vec!['a', 'b'], vec!['c', '\0']]);
     }
 
     #[test]
     fn it_finds_neighbors() {
         assert_eq!(
-            neighboring(&"ab\ncd", &[0, 0]),
+            neighboring("ab\ncd", &[0, 0]),
             [('N', '\0'), ('S', 'c'), ('W', '\0'), ('E', 'b')]
                 .iter()
                 .cloned()
@@ -63,7 +63,7 @@ mod tests {
         );
 
         assert_eq!(
-            neighboring(&"", &[0, 0]),
+            neighboring("", &[0, 0]),
             [('N', '\0'), ('S', '\0'), ('W', '\0'), ('E', '\0')]
                 .iter()
                 .cloned()
@@ -71,7 +71,7 @@ mod tests {
         );
 
         assert_eq!(
-            neighboring(&"abc\ndef\nghi", &[1, 1]),
+            neighboring("abc\ndef\nghi", &[1, 1]),
             [('N', 'b'), ('S', 'h'), ('W', 'd'), ('E', 'f')]
                 .iter()
                 .cloned()
@@ -79,7 +79,7 @@ mod tests {
         );
 
         assert_eq!(
-            neighboring(&"abc\ndef\nghi", &[100, 43000]),
+            neighboring("abc\ndef\nghi", &[100, 43000]),
             [('N', '\0'), ('S', '\0'), ('W', '\0'), ('E', '\0')]
                 .iter()
                 .cloned()
