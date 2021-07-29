@@ -1,5 +1,4 @@
-use super::datatype::BoxInt;
-use super::interpreter::{Parser, Runnable, Validator};
+use super::interpreter::{BoxInt, Parser, Runnable, Validator};
 use super::math;
 use regex::Regex;
 
@@ -315,21 +314,21 @@ impl<T: BoxInt> Runnable<T> for Molecule<T> {
                 }
 
                 stack.push(match child {
-                    Atom::Add => a + b,
-                    Atom::Subtract => a - b,
-                    Atom::Multiply => a * b,
-                    Atom::Divide => math::divide(a, b)?,
+                    Atom::Add => a.checked_add(&b).ok_or("Addition caused invalid value")?,
+                    Atom::Subtract => a
+                        .checked_sub(&b)
+                        .ok_or("Subtraction caused invalid value")?,
+                    Atom::Multiply => a
+                        .checked_mul(&b)
+                        .ok_or("Multiplication caused invalid value")?,
+                    Atom::Divide => a.checked_div(&b).ok_or("Division caused invalid value")?,
                     Atom::Modulo => math::modulo(a, b)?,
                     Atom::InverseModulo => math::inv_modulo(a, b)?,
                     Atom::LeftShift => {
-                        a << b
-                            .to_usize()
-                            .ok_or("Bitwise shifts cannot use signed integers")?
+                        a.signed_shl(b.to_u32().ok_or("Bitwise shift got invalid value")?)
                     }
                     Atom::RightShift => {
-                        a >> b
-                            .to_usize()
-                            .ok_or("Bitwise shifts cannot use signed integers")?
+                        a.signed_shr(b.to_u32().ok_or("Bitwise shift got invalid value")?)
                     }
                     Atom::And => a & b,
                     Atom::Or => a | b,
@@ -584,7 +583,7 @@ mod tests {
     #[test]
     fn it_works_complex() {
         assert_eq!(
-            Molecule::<i16>::new(vec![
+            Molecule::<i8>::new(vec![
                 Atom::Not,
                 Atom::Data(0),
                 Atom::Add,
@@ -595,7 +594,7 @@ mod tests {
                 Atom::Data(3),
                 Atom::Divide,
                 Atom::Data(4),
-                Atom::Modulo,
+                Atom::InverseModulo,
                 Atom::Data(5),
                 Atom::LeftShift,
                 Atom::Data(6),
@@ -607,7 +606,7 @@ mod tests {
                 Atom::Data(9),
                 Atom::And,
                 Atom::Data(10),
-                Atom::InverseModulo,
+                Atom::Modulo,
                 Atom::Data(11),
             ])
             .run(&mut std::collections::HashMap::new(), &mut String::new())
