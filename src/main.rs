@@ -32,7 +32,7 @@ fn main() {
             eprintln!(
                 "{} {}: No such file or directory",
                 Red.bold().paint("error:"),
-                file.unwrap()
+                filename
             );
         }
     }
