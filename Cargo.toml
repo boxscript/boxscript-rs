@@ -11,4 +11,6 @@ publish = false
 ansi_term = "0.12.1"
 clap = "2.33.3"
 lazy_static = "1.4.0"
+num = "0.4.0"
+num-traits = "0.2.14"
 regex = "1.5.4"

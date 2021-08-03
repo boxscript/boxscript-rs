@@ -1,3 +1,4 @@
-pub mod expression;
+mod expression;
 pub mod interpreter;
-pub mod matrix;
+mod math;
+mod matrix;
