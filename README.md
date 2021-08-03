@@ -19,7 +19,7 @@ BoxScript's most defining feature is encouraging **thinking inside the box** whe
 
 [LLVM](https://releases.llvm.org/download.html)
 
-If you have [Nix](https://nixos.org/download.html) installed, you will not need to install these.
+If you have [Nix](https://nixos.org/download.html) or [Docker](https://docs.docker.com/get-docker/) installed, you will not need to install these.
 
 ## Installation
 
@@ -37,40 +37,10 @@ CD to where you cloned the repository:
 cd [path/to/boxscript]
 ```
 
-### With Nix
-
-Make sure Nix is installed:
+Then run `bs.sh`:
 
 ```sh
-nix --version
+sh bs.sh [docker|nix|rust] [path/to/file.bs]
 ```
 
-Then:
-
-```sh
-nix-shell --run "cargo run [path/to/file.bs]"
-```
-
-### Without Nix
-
-Make sure Rust is installed:
-
-```sh
-rustc --version
-```
-
-Make sure LLVM is installed:
-
-```sh
-llvm-config --version
-```
-
-Then:
-
-```sh
-cargo run [path/to/file.bs]
-```
-
-
-## License
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fboxscript%2Fboxscript-rs.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fboxscript%2Fboxscript-rs?ref=badge_large)
+**The Docker option does not work, as LLVM 12 is unavailable for Alpine Linux.**
