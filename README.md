@@ -19,7 +19,7 @@ BoxScript's most defining feature is encouraging **thinking inside the box** whe
 
 [LLVM](https://releases.llvm.org/download.html)
 
-If you have [Nix](https://nixos.org/download.html) installed, you will not need to install these.
+If you have [Nix](https://nixos.org/download.html) or [Docker](https://docs.docker.com/get-docker/) installed, you will not need to install these.
 
 ## Installation
 
@@ -27,6 +27,22 @@ Clone the repository
 
 ```sh
 git clone https://github.com/boxscript/boxscript-rs.git
+```
+
+### With Docker
+
+If you plan to use Docker for this, you should build the image first.
+
+CD to where you cloned the repository:
+
+```sh
+cd [path/to/boxscript]
+```
+
+Then build the image:
+
+```sh
+docker build -t boxscript .
 ```
 
 ## Usage
@@ -48,10 +64,32 @@ nix --version
 Then:
 
 ```sh
-nix-shell --run "cargo run [path/to/file.bs]"
+nix-shell --run "cargo run [path/of/file.bs]"
 ```
 
-### Without Nix
+### With Docker
+
+**This does not work, as LLVM 12 is unavailable for Alpine Linux.**
+
+Make sure Docker is installed:
+
+```sh
+docker version
+```
+
+If you haven't already, build the image:
+
+```sh
+docker build -t boxscript .
+```
+
+Then run the image:
+
+```sh
+docker run -it --mount src="$(dirname [path/of/file.bs])",target=/var/tmp,type=bind boxscript [file.bs]
+```
+
+### Otherwise
 
 Make sure Rust is installed:
 
@@ -70,7 +108,3 @@ Then:
 ```sh
 cargo run [path/to/file.bs]
 ```
-
-
-## License
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fboxscript%2Fboxscript-rs.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fboxscript%2Fboxscript-rs?ref=badge_large)
