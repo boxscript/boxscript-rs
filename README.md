@@ -29,22 +29,6 @@ Clone the repository
 git clone https://github.com/boxscript/boxscript-rs.git
 ```
 
-### With Docker
-
-If you plan to use Docker for this, you should build the image first.
-
-CD to where you cloned the repository:
-
-```sh
-cd [path/to/boxscript]
-```
-
-Then build the image:
-
-```sh
-docker build -t boxscript .
-```
-
 ## Usage
 
 CD to where you cloned the repository:
@@ -53,58 +37,10 @@ CD to where you cloned the repository:
 cd [path/to/boxscript]
 ```
 
-### With Nix
-
-Make sure Nix is installed:
+Then run `bs.sh`:
 
 ```sh
-nix --version
+sh bs.sh [docker|nix|rust] [path/to/file.bs]
 ```
 
-Then:
-
-```sh
-nix-shell --run "cargo run [path/of/file.bs]"
-```
-
-### With Docker
-
-**This does not work, as LLVM 12 is unavailable for Alpine Linux.**
-
-Make sure Docker is installed:
-
-```sh
-docker version
-```
-
-If you haven't already, build the image:
-
-```sh
-docker build -t boxscript .
-```
-
-Then run the image:
-
-```sh
-docker run -it --mount src="$(dirname [path/of/file.bs])",target=/var/tmp,type=bind boxscript [file.bs]
-```
-
-### Otherwise
-
-Make sure Rust is installed:
-
-```sh
-rustc --version
-```
-
-Make sure LLVM is installed:
-
-```sh
-llvm-config --version
-```
-
-Then:
-
-```sh
-cargo run [path/to/file.bs]
-```
+**The Docker option does not work, as LLVM 12 is unavailable for Alpine Linux.**
