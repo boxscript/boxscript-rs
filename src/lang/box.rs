@@ -28,6 +28,17 @@ pub enum Relation {
 }
 
 impl<T: BoxInt> Box<T> {
+    pub fn new(start: Loc<T>, end: Loc<T>, genus: Genus) -> Result<Box<T>, String> {
+        if start.x > end.x || start.y > end.y {
+            Err(format!(
+                "Box start ({}, {}) is greater than end ({}, {})",
+                start.x, start.y, end.x, end.y
+            ))
+        } else {
+            Ok(Box { start, end, genus })
+        }
+    }
+
     pub fn relationship(&self, other: &Box<T>) -> Relation {
         // self is a ___ of other
         if self.start.x >= other.start.x
