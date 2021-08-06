@@ -21,20 +21,30 @@ pub struct Box<T: BoxInt> {
     genus: Genus,
 }
 
+pub enum Relation {
+    Parent,
+    Child,
+    Other, // cannot guarantee siblingship since they could have different parents
+}
+
 impl<T: BoxInt> Box<T> {
-    // below two methods are used for hierarchies
-    pub fn inside(&self, &other: &Box<T>) -> bool {
-        self.start.x >= other.start.x
+    pub fn relationship(&self, other: &Box<T>) -> Relation {
+        // self is a ___ of other
+        if self.start.x >= other.start.x
             && self.end.x <= other.end.x
             && self.start.y >= other.start.y
             && self.end.y <= other.end.y
-    }
-
-    pub fn contains(&self, &other: &Box<T>) -> bool {
-        self.start.x <= other.start.x
+        {
+            Relation::Child
+        } else if self.start.x <= other.start.x
             && self.end.x >= other.end.x
             && self.start.y <= other.start.y
             && self.end.y >= other.end.y
+        {
+            Relation::Parent
+        } else {
+            Relation::Other
+        }
     }
 
     // these should be used to determine execution order (i.e. (a)sync)
