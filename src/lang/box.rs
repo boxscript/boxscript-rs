@@ -9,15 +9,15 @@ pub enum Genus {
 }
 
 #[derive(Clone, Copy)]
-pub struct Loc<T: BoxInt> {
+pub struct Locus<T: BoxInt> {
     x: T,
     y: T,
 }
 
 #[derive(Clone, Copy)]
 pub struct Box<T: BoxInt> {
-    start: Loc<T>,
-    end: Loc<T>,
+    start: Locus<T>,
+    end: Locus<T>,
     genus: Genus,
 }
 
@@ -28,7 +28,7 @@ pub enum Relation {
 }
 
 impl<T: BoxInt> Box<T> {
-    pub fn new(start: Loc<T>, end: Loc<T>, genus: Genus) -> Result<Box<T>, String> {
+    pub fn new(start: Locus<T>, end: Locus<T>, genus: Genus) -> Result<Box<T>, String> {
         if start.x > end.x || start.y > end.y {
             Err(format!(
                 "Box start ({}, {}) is greater than end ({}, {})",
